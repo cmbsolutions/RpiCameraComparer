@@ -15,9 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QLayout, QMainWindow,
-    QPushButton, QSizePolicy, QSlider, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
+    QGridLayout, QHBoxLayout, QLabel, QLayout,
+    QMainWindow, QPushButton, QSizePolicy, QSlider,
+    QWidget)
 import icons_rc
 
 class Ui_MainWindow(object):
@@ -199,11 +200,15 @@ class Ui_MainWindow(object):
         self.Cam0SaveCapture.setGeometry(QRect(230, 450, 101, 22))
         self.cbRecogniser = QComboBox(self.centralwidget)
         self.cbRecogniser.setObjectName(u"cbRecogniser")
-        self.cbRecogniser.setGeometry(QRect(10, 530, 211, 22))
+        self.cbRecogniser.setGeometry(QRect(10, 510, 211, 22))
         self.cbRecogniser.setEditable(False)
         self.label = QLabel(self.centralwidget)
         self.label.setObjectName(u"label")
-        self.label.setGeometry(QRect(10, 510, 57, 14))
+        self.label.setGeometry(QRect(10, 490, 57, 14))
+        self.cSaveImg = QCheckBox(self.centralwidget)
+        self.cSaveImg.setObjectName(u"cSaveImg")
+        self.cSaveImg.setGeometry(QRect(10, 540, 211, 20))
+        self.cSaveImg.setChecked(True)
         MainWindow.setCentralWidget(self.centralwidget)
         self.Frame_Error.raise_()
         self.Cam0FocusPlus.raise_()
@@ -223,6 +228,7 @@ class Ui_MainWindow(object):
         self.Cam0SaveCapture.raise_()
         self.cbRecogniser.raise_()
         self.label.raise_()
+        self.cSaveImg.raise_()
 
         self.retranslateUi(MainWindow)
         self.Cam0ResetROI.clicked.connect(MainWindow.ResetCamRoi)
@@ -239,6 +245,7 @@ class Ui_MainWindow(object):
         self.ResetError.clicked.connect(MainWindow.ResetError)
         self.Cam0SaveCapture.clicked.connect(MainWindow.SaveFileDialog)
         self.cbRecogniser.currentIndexChanged.connect(MainWindow.ChangeEngine)
+        self.cSaveImg.stateChanged.connect(MainWindow.ChangeSaveImg)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -286,5 +293,6 @@ class Ui_MainWindow(object):
         self.Cam0SaveCapture.setText(QCoreApplication.translate("MainWindow", u"Save capture", None))
         self.cbRecogniser.setCurrentText("")
         self.label.setText(QCoreApplication.translate("MainWindow", u"Engine:", None))
+        self.cSaveImg.setText(QCoreApplication.translate("MainWindow", u"Save captures", None))
     # retranslateUi
 

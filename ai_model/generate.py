@@ -11,8 +11,10 @@ OUT_DIR = BASE / "TrainingSet5"
 print(f"Using output directory: {OUT_DIR}")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
+fontsize=16
+
 for fnt in ("cour", "arial", "times", "verdana"):
-    font = ImageFont.truetype(f"{FONT_PATH}{fnt}.ttf", size=32)  # pick a size similar to your ROIs
+    font = ImageFont.truetype(f"{FONT_PATH}{fnt}.ttf", size=fontsize)  # pick a size similar to your ROIs
 
     for digit in range(10):
         class_dir = OUT_DIR / str(digit)

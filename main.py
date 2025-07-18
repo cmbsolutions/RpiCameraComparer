@@ -15,6 +15,11 @@ from segment_digits import ai_helper
 import tensorflow as tf
 import pytesseract
 from enumerations import EngineType
+from pathlib import Path
+
+BASE = Path(__file__).parent.resolve()
+IMG_DIR = BASE / "Captures"
+IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -31,7 +36,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._capture_thread = None
         self._capturing = False
         self._halt = False
-        self._engine = EngineType.AI_MODEL
+        self._engine = EngineType.PYTESSERACT_OCR
+        self._save_images = True
 
         for engine in EngineType:
             getattr(self.ui, "cbRecogniser").addItem(engine.value)
@@ -110,9 +116,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         match self._engine:
             case EngineType.AI_MODEL:
-                threading.Thread(target=self.predict_roi_digits).start()
+                threading.Thread(target=self.run_ai_model).start()
             case EngineType.PYTESSERACT_OCR:
-                threading.Thread(target=self.run_dual_ocr).start() 
+                threading.Thread(target=self.run_ocr).start() 
 
     
     def CamOnFocusButton(self, checked: bool):
@@ -134,8 +140,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         getattr(self.ui, f"Cam{cam_idx}Source").picam2.set_controls({"LensPosition": pos})
 
-        print(f"Camera {cam_idx} focus set to {pos:.2f}")
-
 
     def CamOnFocusSlider(self):
         cam_idx = int(self.sender().objectName()[3])
@@ -144,8 +148,6 @@ class MainWindow(QtWidgets.QMainWindow):
         pos = self._lens_pos[cam_idx] = widget.value()/10
         self._lens_pos[cam_idx] = pos
         getattr(self.ui, f"Cam{cam_idx}Source").picam2.set_controls({"LensPosition": pos})
-
-        print(f"Camera {cam_idx} focus set to {pos:.2f}")
 
 
     def StartCapturing(self):
@@ -164,7 +166,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._capture_thread.imgage_captured.connect(self.handleCaptured)
             self._capture_thread.finished.connect(lambda: getattr(self.ui, f"Cam{idx}TestCapture").setEnabled(True))
             self._capture_thread.start()
-            break
 
         if self._capturing and not self._halt:
             QtCore.QTimer.singleShot(500, self.CompareImages)
@@ -210,36 +211,29 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
 
 
-    def run_dual_ocr(self):
+    def ChangeSaveImg(self, idx):
+        self._save_images = getattr(self.ui, self.sender().objectName()).checked()
+
+
+    def run_ocr(self):
         with self.ocr_lock:
             roi = getattr(self.ui, f"Cam{self._cam_idx}Source")._roi
-            #roi2 = getattr(self.ui, f"Cam{self._cam_idx+1}Source")._roi
-
             
             x1, y1, x2, y2 = roi
             cropped = self._frame_array[y1:y2, x1:x2]
             gray = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
             text = pytesseract.image_to_string(gray, config="--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789")
-            digits1 = ''.join(filter(str.isdigit, text))
+            digits = ''.join(filter(str.isdigit, text))
 
-            #digits2 = extract_digits(self._frame_array, roi2)
-
-            #digits1 = ocr_preprocess.clean_ocr(digits1)
-            #digits2 = ocr_preprocess.clean_ocr(digits2)
-            
             if not self._halt:
-                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {digits1}")
-                #getattr(self.ui, f"Cam{self._cam_idx+1}CapturedValue").setText(f"CAM{self._cam_idx+1}: {digits2}")
-            
-            img = Image.fromarray(cropped)
-            img.save(f"Test/{digits1}.png", format="PNG")
-            #if digits1 != digits2:
-            #    getattr(self.ui, f"Frame_Error").show()
-            #    getattr(self.ui, f"ResetError").setEnabled(True)
-            #    self._halt = True
+                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {digits}")
+                
+            if self._save_images:
+                img = Image.fromarray(cropped, mode="RGBA")
+                img.save(IMG_DIR / f"{digits}.png", format="PNG")
 
 
-    def predict_roi_digits(self):
+    def run_ai_model(self):
         with self.predict_lock:
             roi = getattr(self.ui, f"Cam{self._cam_idx}Source")._roi
 
@@ -256,11 +250,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 digits.append(str(pred.argmax()))
             result = "".join(digits)  
 
-            img = Image.fromarray(cropped)
-            img.save(f"Test/{result}.png", format="PNG")
-
             if not self._halt:
-                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {result}")     
+                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {result}") 
+
+            if self._save_images:
+                img = Image.fromarray(cropped, mode="RGBA")
+                img.save(IMG_DIR / f"{digits}.png", format="PNG")
 
 
 if __name__ == "__main__":
