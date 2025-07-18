@@ -1,0 +1,810 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>923</width>
+    <height>564</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="Cam0FocusPlus">
+    <property name="geometry">
+     <rect>
+      <x>420</x>
+      <y>420</y>
+      <width>31</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Increase focus distance</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/list-add.png</normaloff>:/main/list-add.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam0FocusMinus">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>420</y>
+      <width>31</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Decrease focus distance</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/list-remove.png</normaloff>:/main/list-remove.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam0ResetROI">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>450</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Reset the Region Of Interest</string>
+    </property>
+    <property name="text">
+     <string>Reset ROI</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam0TestCapture">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>450</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Test the capture of Camera 1</string>
+    </property>
+    <property name="text">
+     <string>Test capture</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="frame">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>461</width>
+      <height>411</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <layout class="QGridLayout" name="Cam0Grid" rowstretch="1,0">
+       <property name="sizeConstraint">
+        <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+       </property>
+       <item row="1" column="0">
+        <widget class="QLabel" name="Cam0CapturedValue">
+         <property name="font">
+          <font>
+           <family>DejaVu Sans Mono</family>
+           <pointsize>36</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::Panel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Sunken</enum>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+         <property name="midLineWidth">
+          <number>0</number>
+         </property>
+         <property name="text">
+          <string>CAM0: 00000</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="Cam0Source">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>480</width>
+           <height>320</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::TextFormat::PlainText</enum>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QFrame" name="frame_2">
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>0</y>
+      <width>461</width>
+      <height>411</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <layout class="QGridLayout" name="Cam1Grid" rowstretch="1,0">
+       <property name="sizeConstraint">
+        <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
+       </property>
+       <item row="1" column="0">
+        <widget class="QLabel" name="Cam1CapturedValue">
+         <property name="font">
+          <font>
+           <family>DejaVu Sans Mono</family>
+           <pointsize>36</pointsize>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Shape::Panel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Shadow::Sunken</enum>
+         </property>
+         <property name="lineWidth">
+          <number>1</number>
+         </property>
+         <property name="midLineWidth">
+          <number>0</number>
+         </property>
+         <property name="text">
+          <string>CAM1: 00000</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="Cam1Source">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>480</width>
+           <height>320</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::TextFormat::PlainText</enum>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QPushButton" name="Cam1ResetROI">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>450</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Reset the Region Of Interest</string>
+    </property>
+    <property name="text">
+     <string>Reset ROI</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam1FocusPlus">
+    <property name="geometry">
+     <rect>
+      <x>880</x>
+      <y>420</y>
+      <width>31</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Increase focus distance</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/list-add.png</normaloff>:/main/list-add.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam1TestCapture">
+    <property name="geometry">
+     <rect>
+      <x>600</x>
+      <y>450</y>
+      <width>80</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Test the capture of Camera 1</string>
+    </property>
+    <property name="text">
+     <string>Test capture</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam1FocusMinus">
+    <property name="geometry">
+     <rect>
+      <x>470</x>
+      <y>420</y>
+      <width>31</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>Decrease focus distance</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/list-remove.png</normaloff>:/main/list-remove.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QSlider" name="Cam0Slider">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>420</y>
+      <width>361</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>320</number>
+    </property>
+    <property name="value">
+     <number>160</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Orientation::Horizontal</enum>
+    </property>
+    <property name="invertedAppearance">
+     <bool>false</bool>
+    </property>
+    <property name="invertedControls">
+     <bool>false</bool>
+    </property>
+    <property name="tickPosition">
+     <enum>QSlider::TickPosition::TicksBothSides</enum>
+    </property>
+   </widget>
+   <widget class="QSlider" name="Cam1Slider">
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>420</y>
+      <width>361</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>320</number>
+    </property>
+    <property name="value">
+     <number>160</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Orientation::Horizontal</enum>
+    </property>
+    <property name="invertedAppearance">
+     <bool>false</bool>
+    </property>
+    <property name="invertedControls">
+     <bool>false</bool>
+    </property>
+    <property name="tickPosition">
+     <enum>QSlider::TickPosition::TicksBothSides</enum>
+    </property>
+   </widget>
+   <widget class="QFrame" name="Frame_Error">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>921</width>
+      <height>411</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: red;</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Plain</enum>
+    </property>
+    <property name="lineWidth">
+     <number>17</number>
+    </property>
+    <property name="midLineWidth">
+     <number>0</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="StartCapture">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>500</y>
+      <width>241</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <italic>false</italic>
+      <bold>true</bold>
+      <strikeout>false</strikeout>
+     </font>
+    </property>
+    <property name="text">
+     <string>Start capturing</string>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normalon>:/main/gtk-media-play-ltr.png</normalon>
+     </iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ResetError">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>510</x>
+      <y>500</y>
+      <width>241</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>14</pointsize>
+      <italic>false</italic>
+      <bold>true</bold>
+      <strikeout>false</strikeout>
+     </font>
+    </property>
+    <property name="text">
+     <string>Reset error</string>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normalon>:/main/gtk-delete.png</normalon>
+     </iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Cam0SaveCapture">
+    <property name="geometry">
+     <rect>
+      <x>230</x>
+      <y>450</y>
+      <width>101</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save capture</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="cbRecogniser">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>530</y>
+      <width>211</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="editable">
+     <bool>false</bool>
+    </property>
+    <property name="currentText">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>510</y>
+      <width>57</width>
+      <height>14</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Engine:</string>
+    </property>
+   </widget>
+   <zorder>Frame_Error</zorder>
+   <zorder>Cam0FocusPlus</zorder>
+   <zorder>Cam0FocusMinus</zorder>
+   <zorder>Cam0ResetROI</zorder>
+   <zorder>Cam0TestCapture</zorder>
+   <zorder>frame</zorder>
+   <zorder>frame_2</zorder>
+   <zorder>Cam1ResetROI</zorder>
+   <zorder>Cam1FocusPlus</zorder>
+   <zorder>Cam1TestCapture</zorder>
+   <zorder>Cam1FocusMinus</zorder>
+   <zorder>Cam0Slider</zorder>
+   <zorder>Cam1Slider</zorder>
+   <zorder>StartCapture</zorder>
+   <zorder>ResetError</zorder>
+   <zorder>Cam0SaveCapture</zorder>
+   <zorder>cbRecogniser</zorder>
+   <zorder>label</zorder>
+  </widget>
+ </widget>
+ <resources>
+  <include location="Resources/icons.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>Cam0ResetROI</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ResetCamRoi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>95</x>
+     <y>471</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>159</x>
+     <y>431</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam0TestCapture</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>TestCam()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>205</x>
+     <y>450</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>156</x>
+     <y>459</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam0FocusMinus</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CamOnFocusButton()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>11</x>
+     <y>441</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>32</x>
+     <y>499</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam0FocusPlus</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CamOnFocusButton()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>478</x>
+     <y>420</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>111</x>
+     <y>526</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam1FocusPlus</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CamOnFocusButton()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>960</x>
+     <y>420</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>367</x>
+     <y>417</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam1FocusMinus</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CamOnFocusButton()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>510</x>
+     <y>420</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>428</x>
+     <y>436</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam1ResetROI</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ResetCamRoi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>555</x>
+     <y>450</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>665</x>
+     <y>408</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam1TestCapture</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>TestCam()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>640</x>
+     <y>450</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>655</x>
+     <y>454</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam0Slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CamOnFocusSlider()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>318</x>
+     <y>429</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>534</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam1Slider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>CamOnFocusSlider()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>767</x>
+     <y>434</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>825</x>
+     <y>521</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>StartCapture</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>StartCapturing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>524</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>333</x>
+     <y>469</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ResetError</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ResetError()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>604</x>
+     <y>529</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>793</x>
+     <y>499</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam0SaveCapture</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>SaveFileDialog()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>289</x>
+     <y>460</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>187</x>
+     <y>506</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cbRecogniser</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ChangeEngine()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>69</x>
+     <y>487</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>44</x>
+     <y>525</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>ResetCamRoi()</slot>
+  <slot>TestCam()</slot>
+  <slot>CamOnFocusButton()</slot>
+  <slot>CamOnFocusSlider()</slot>
+  <slot>StartCapturing()</slot>
+  <slot>ResetError()</slot>
+  <slot>SaveFileDialog()</slot>
+  <slot>ChangeEngine()</slot>
+ </slots>
+</ui>

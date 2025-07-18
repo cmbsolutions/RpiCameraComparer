@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="main">
+    <file>application-exit.png</file>
+    <file>gtk-delete.png</file>
+    <file>gtk-media-pause.png</file>
+    <file>gtk-media-play-ltr.png</file>
+    <file>list-add.png</file>
+    <file>list-remove.png</file>
+    <file>edit-delete-symbolic.symbolic.png</file>
+    <file>media-playback-start-symbolic.symbolic.png</file>
+    <file>media-playback-stop-symbolic.symbolic.png</file>
+    <file>selection-mode-symbolic.symbolic.png</file>
+    <file>zoom-in-symbolic.symbolic.png</file>
+    <file>zoom-out-symbolic.symbolic.png</file>
+  </qresource>
+</RCC>
