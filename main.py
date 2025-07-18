@@ -198,7 +198,7 @@ class MainWindow(QtWidgets.QMainWindow):
             options=QFileDialog.Options()  # you can OR in flags like DontUseNativeDialog
         )
         if filename:
-            img = Image.fromarray(frame_array, mode="RGBA")
+            img = Image.fromarray(frame_array)
             img.save(f"{filename}.png", format="PNG")
 
 
@@ -231,7 +231,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {digits1}")
                 #getattr(self.ui, f"Cam{self._cam_idx+1}CapturedValue").setText(f"CAM{self._cam_idx+1}: {digits2}")
             
-            img = Image.fromarray(cropped, mode="RGBA")
+            img = Image.fromarray(cropped)
             img.save(f"Test/{digits1}.png", format="PNG")
             #if digits1 != digits2:
             #    getattr(self.ui, f"Frame_Error").show()
@@ -256,7 +256,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 digits.append(str(pred.argmax()))
             result = "".join(digits)  
 
-            img = Image.fromarray(cropped, mode="RGBA")
+            img = Image.fromarray(cropped)
             img.save(f"Test/{result}.png", format="PNG")
 
             if not self._halt:

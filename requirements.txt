@@ -1,5 +1,5 @@
 gpiozero==2.0.1
-numpy==1.24.2
+numpy==1.26.0
 picamera2==0.3.28
 Pillow==11.3.0
 PySide6==6.8.0.2
@@ -7,3 +7,4 @@ PySide6_Addons==6.8.0.2
 PySide6_Essentials==6.8.0.2
 pytesseract==0.3.13
 tensorflow==2.19.0
+
