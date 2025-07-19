@@ -16,11 +16,20 @@ import tensorflow as tf
 import pytesseract
 from enumerations import EngineType
 from pathlib import Path
+from gpiozero import Button, OutputDevice
+
+# ───── Configuration ─────
+TRIGGER_PIN = 17
+OUTPUT_PIN = 27
+PULSE_TIME = 0.5  # seconds
 
 BASE = Path(__file__).parent.resolve()
 IMG_DIR = BASE / "Captures"
 IMG_DIR.mkdir(parents=True, exist_ok=True)
 
+events = [threading.Event() for _ in range(2)]
+
+# ----- Main class -----
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
@@ -30,11 +39,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.Frame_Error.hide()
         self._lens_pos = {}
         self._focus_supported = {}
+        self._frame_array = {}
         self.collecting = False
         self.ocr_lock = threading.Lock()
         self.predict_lock = threading.Lock()
         self._capture_thread = None
         self._capturing = False
+        self._captured_digits = {}
+        self._captured = 0
         self._halt = False
         self._engine = EngineType.PYTESSERACT_OCR
         self._save_images = True
@@ -45,6 +57,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # This is the AI model
         self._model = tf.keras.models.load_model("ai_model/digit_cnn_model5.keras")
         
+        # Setup GPIO
+        self.gpiotrigger = Button(TRIGGER_PIN, pull_up=True)
+        self.gpiooutput = OutputDevice(OUTPUT_PIN)
+        self.gpiotrigger.when_pressed = self.handle_gpiotrigger
+
         QtCore.QTimer.singleShot(100, self._insert_cameras)
     
 
@@ -112,13 +129,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def handleCaptured(self, frame_array, cam_idx):
         self._cam_idx = cam_idx
-        self._frame_array = frame_array
+        self._frame_array[cam_idx] = frame_array
 
         match self._engine:
             case EngineType.AI_MODEL:
-                threading.Thread(target=self.run_ai_model).start()
+                threading.Thread(target=self.run_ai_model, args=(cam_idx,)).start()
             case EngineType.PYTESSERACT_OCR:
-                threading.Thread(target=self.run_ocr).start() 
+                threading.Thread(target=self.run_ocr, args=(cam_idx,)).start() 
 
     
     def CamOnFocusButton(self, checked: bool):
@@ -150,12 +167,25 @@ class MainWindow(QtWidgets.QMainWindow):
         getattr(self.ui, f"Cam{cam_idx}Source").picam2.set_controls({"LensPosition": pos})
 
 
+    def handle_gpiotrigger(self):
+        if self._capturing:
+            self.CompareImages()
+
+            for ev in events:
+                ev.wait()
+
+            if self._captured_digits[0] != self._captured_digits[1]:
+                self._halt = True
+                getattr(self.ui, f"Frame_Error").show()
+                getattr(self.ui, f"ResetError").setEnabled(True)
+
+
     def StartCapturing(self):
         if self._capturing:
             self._capturing = False
         else:
             self._capturing = True
-            QtCore.QTimer.singleShot(500, self.CompareImages)
+            #QtCore.QTimer.singleShot(500, self.CompareImages)
 
 
     def CompareImages(self):
@@ -167,16 +197,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self._capture_thread.finished.connect(lambda: getattr(self.ui, f"Cam{idx}TestCapture").setEnabled(True))
             self._capture_thread.start()
 
-        if self._capturing and not self._halt:
-            QtCore.QTimer.singleShot(500, self.CompareImages)
+        #if self._capturing and not self._halt:
+            #QtCore.QTimer.singleShot(500, self.CompareImages)
 
 
     def ResetError(self):
         getattr(self.ui, f"Frame_Error").hide()
         getattr(self.ui, f"ResetError").setEnabled(False)
         self._halt = False
-        if self._capturing:
-            QtCore.QTimer.singleShot(1000, self.CompareImages)
+        #if self._capturing:
+            #QtCore.QTimer.singleShot(1000, self.CompareImages)
 
     
     def SaveFileDialog(self):
@@ -215,30 +245,34 @@ class MainWindow(QtWidgets.QMainWindow):
         self._save_images = getattr(self.ui, self.sender().objectName()).checked()
 
 
-    def run_ocr(self):
+    def run_ocr(self, idx):
         with self.ocr_lock:
-            roi = getattr(self.ui, f"Cam{self._cam_idx}Source")._roi
+            roi = getattr(self.ui, f"Cam{idx}Source")._roi
             
             x1, y1, x2, y2 = roi
-            cropped = self._frame_array[y1:y2, x1:x2]
+            cropped = self._frame_array[idx][y1:y2, x1:x2]
             gray = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
             text = pytesseract.image_to_string(gray, config="--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789")
             digits = ''.join(filter(str.isdigit, text))
 
             if not self._halt:
-                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {digits}")
-                
+                getattr(self.ui, f"Cam{idx}CapturedValue").setText(f"CAM{idx}: {digits}")
+                self._captured_digits[idx] = digits
+
             if self._save_images:
-                img = Image.fromarray(cropped, mode="RGBA")
+                rgb = cropped[...,:3].copy()
+                img = Image.fromarray(rgb)
                 img.save(IMG_DIR / f"{digits}.png", format="PNG")
 
+            events[idx].set()
 
-    def run_ai_model(self):
+
+    def run_ai_model(self, idx):
         with self.predict_lock:
-            roi = getattr(self.ui, f"Cam{self._cam_idx}Source")._roi
+            roi = getattr(self.ui, f"Cam{idx}Source")._roi
 
             x1, y1, x2, y2 = roi
-            cropped = self._frame_array[y1:y2, x1:x2]
+            cropped = self._frame_array[idx][y1:y2, x1:x2]
 
             rois = ai_helper.segment_digits(self, cropped)
             digits = []
@@ -251,11 +285,15 @@ class MainWindow(QtWidgets.QMainWindow):
             result = "".join(digits)  
 
             if not self._halt:
-                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {result}") 
+                getattr(self.ui, f"Cam{idx}CapturedValue").setText(f"CAM{idx}: {result}") 
+                self._captured_digits[idx] = result
 
             if self._save_images:
-                img = Image.fromarray(cropped, mode="RGBA")
-                img.save(IMG_DIR / f"{digits}.png", format="PNG")
+                rgb = cropped[...,:3].copy()
+                img = Image.fromarray(rgb)
+                img.save(IMG_DIR / f"{result}.png", format="PNG")
+
+            events[idx].set()
 
 
 if __name__ == "__main__":
