@@ -1,11 +1,10 @@
 import sys
 import re
-import threading
 import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtCore import QSettings, QThread
-from PySide6.QtWidgets import QFileDialog, QWidget
+from PySide6.QtCore import QSettings, Signal
+from PySide6.QtWidgets import QFileDialog
 from PySide6.QtGui import QIcon
 from qglpicamera2_wrapper import QGlPicamera2
 from mainWindow import Ui_MainWindow
@@ -17,14 +16,13 @@ from run_ai_thread import RunAIThread
 from PIL import Image
 from segment_digits import ai_helper
 import tensorflow as tf
-import pytesseract
 from enumerations import EngineType
 from pathlib import Path
 from gpiozero import Button, OutputDevice
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
-OUTPUT_PIN = 27
+OUTPUT_PIN = 22
 PULSE_TIME = 0.5  # seconds
 
 BASE = Path(__file__).parent.resolve()
@@ -34,6 +32,8 @@ IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ----- Main class -----
 class MainWindow(QtWidgets.QMainWindow):
+    gpio_triggered = Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -45,8 +45,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._focus_supported = {}
         self._frame_array = {}
         self.collecting = False
-        self.ocr_lock = threading.Lock()
-        self.predict_lock = threading.Lock()
         self._capture_thread = {}
         self._ocr_thread = {}
         self._ai_thread = {}
@@ -61,11 +59,14 @@ class MainWindow(QtWidgets.QMainWindow):
             getattr(self.ui, "cbRecogniser").addItem(engine.value)
 
         # This is the AI model
-        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model5.keras")
+        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model6.keras")
         
+        self.gpio_triggered.connect(self.onGpioTriggered)
+
         # Setup GPIO
-        self.gpiotrigger = Button(TRIGGER_PIN, pull_up=True)
+        self.gpiotrigger = Button(TRIGGER_PIN, pull_up=True, bounce_time=0.05)
         self.gpiooutput = OutputDevice(OUTPUT_PIN)
+        self.gpiooutput.on()
         self.gpiotrigger.when_pressed = self.handle_gpiotrigger
 
         QtCore.QTimer.singleShot(100, self._insert_cameras)
@@ -161,16 +162,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
 
-        # thread = QThread()
-        # worker = CaptureThread(widget)
-        # worker.moveToThread(thread)
-        # thread.started.connect(worker.run)
-        # worker.image_captured.connect(self.handleCaptured)
-        # worker.finished.connect(thread.quit)
-        # worker.finished.connect(worker.deleteLater)
-        # thread.finished.connect(thread.deleteLater)
-        # thread.start()
-
         self._capture_thread[cam_idx] = CaptureThread(widget)
         self._capture_thread[cam_idx].image_captured.connect(self.handleCaptured)
         self._capture_thread[cam_idx].finished.connect(lambda: lambda: self._capture_thread[cam_idx].deleteLater())
@@ -184,31 +175,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         match self._engine:
             case EngineType.AI_MODEL:
-                # thread = QThread()
-                # worker = RunAIThread(frame_array, cam_idx, roi, self._model)
-                # worker.moveToThread(thread)
-                # thread.started.connect(worker.run)
-                # worker.ai_captured_result.connect(self.digits_captured)
-                # worker.finished.connect(thread.quit)
-                # worker.finished.connect(worker.deleteLater)
-                # thread.finished.connect(thread.deleteLater)
-                # thread.start()
-
                 self._ai_thread[cam_idx] = RunAIThread(frame_array, cam_idx, roi, self._model)
                 self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
                 self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
                 self._ai_thread[cam_idx].start()
             case EngineType.PYTESSERACT_OCR:
-                # thread = QThread()
-                # worker = RunOCRThread(frame_array, cam_idx, roi)
-                # worker.moveToThread(thread)
-                # thread.started.connect(worker.run)
-                # worker.ocr_captured_result.connect(self.digits_captured)
-                # worker.finished.connect(thread.quit)
-                # worker.finished.connect(worker.deleteLater)
-                # thread.finished.connect(thread.deleteLater)
-                # thread.start()
-                
                 self._ocr_thread[cam_idx] = RunOCRThread(frame_array, cam_idx, roi)
                 self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
                 self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
@@ -227,6 +198,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self._captured >= 2:
             if self._captured_digits[0] != self._captured_digits[1]:
+                self.gpiooutput.off()
                 self._halt = True
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
                 getattr(self.ui, "Frame_Error").show()
@@ -237,6 +209,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def handle_gpiotrigger(self):
+        self.gpio_triggered.emit()
+
+
+    def onGpioTriggered(self):
         if self._capturing and not self._halt:
             self._captured = 0
 
@@ -253,53 +229,27 @@ class MainWindow(QtWidgets.QMainWindow):
             getattr(self.ui, "StartCapture").setText("Stop capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-pause.png"))
 
-            #QtCore.QTimer.singleShot(500, self.CompareImages)
-
 
     def CompareImages(self):
         for idx in (0, 1):
             widget = getattr(self.ui, f"Cam{idx}Source").picam2
-
-            # thread = QThread()
-            # worker = CaptureThread(widget)
-            # worker.moveToThread(thread)
-            # thread.started.connect(worker.run)
-            # worker.image_captured.connect(self.handleCaptured)
-            # worker.finished.connect(thread.quit)
-            # worker.finished.connect(worker.deleteLater)
-            # thread.finished.connect(thread.deleteLater)
-            # thread.start()
 
             self._capture_thread[idx] = CaptureThread(widget)
             self._capture_thread[idx].image_captured.connect(self.handleCaptured)
             self._capture_thread[idx].finished.connect(lambda: self._capture_thread[idx].quit())
             self._capture_thread[idx].start()
 
-        #if self._capturing and not self._halt:
-            #QtCore.QTimer.singleShot(500, self.CompareImages)
-
 
     def ResetError(self):
         getattr(self.ui, f"Frame_Error").hide()
         getattr(self.ui, f"ResetError").setEnabled(False)
         self._halt = False
-        #if self._capturing:
-            #QtCore.QTimer.singleShot(1000, self.CompareImages)
+        self.gpiooutput.on()
 
     
     def SaveFileDialog(self):
         cam_idx = int(self.sender().objectName()[3])
         widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
-
-        # thread = QThread()
-        # worker = CaptureThread(widget)
-        # worker.moveToThread(thread)
-        # thread.started.connect(worker.run)
-        # worker.image_captured.connect(self.SaveFileDialogHandler)
-        # worker.finished.connect(thread.quit)
-        # worker.finished.connect(worker.deleteLater)
-        # thread.finished.connect(thread.deleteLater)
-        # thread.start()
 
         self._capture_thread[cam_idx] = CaptureThread(widget)
         self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
@@ -313,7 +263,7 @@ class MainWindow(QtWidgets.QMainWindow):
             caption="Save Image As...",
             dir="",
             filter="PNG Files (*.png);;JPEG Files (*.jpg *.jpeg);;All Files (*)",
-            options=QFileDialog.Options()  # you can OR in flags like DontUseNativeDialog
+            options=QFileDialog.Options()
         )
         if filename:
             rgb = frame_array[...,:3].copy()

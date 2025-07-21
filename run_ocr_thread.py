@@ -23,5 +23,7 @@ class RunOCRThread(QThread):
 
         rgb = cropped[...,:3].copy()
         
+        print(f"OCR Cam{self.idx}")
         self.ocr_captured_result.emit(rgb, self.idx, digits)
+        print(f"OCR Cam{self.idx} finished")
         self.finished.emit()

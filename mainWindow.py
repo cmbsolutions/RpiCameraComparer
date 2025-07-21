@@ -209,6 +209,13 @@ class Ui_MainWindow(object):
         self.cSaveImg.setObjectName(u"cSaveImg")
         self.cSaveImg.setGeometry(QRect(10, 540, 211, 20))
         self.cSaveImg.setChecked(True)
+        self.bTriggerManual = QPushButton(self.centralwidget)
+        self.bTriggerManual.setObjectName(u"bTriggerManual")
+        self.bTriggerManual.setGeometry(QRect(760, 500, 151, 51))
+        icon4 = QIcon()
+        icon4.addFile(u":/main/gtk-media-record.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bTriggerManual.setIcon(icon4)
+        self.bTriggerManual.setIconSize(QSize(24, 24))
         MainWindow.setCentralWidget(self.centralwidget)
         self.Frame_Error.raise_()
         self.Cam0FocusPlus.raise_()
@@ -229,6 +236,7 @@ class Ui_MainWindow(object):
         self.cbRecogniser.raise_()
         self.label.raise_()
         self.cSaveImg.raise_()
+        self.bTriggerManual.raise_()
 
         self.retranslateUi(MainWindow)
         self.Cam0ResetROI.clicked.connect(MainWindow.ResetCamRoi)
@@ -246,6 +254,7 @@ class Ui_MainWindow(object):
         self.Cam0SaveCapture.clicked.connect(MainWindow.SaveFileDialog)
         self.cbRecogniser.currentIndexChanged.connect(MainWindow.ChangeEngine)
         self.cSaveImg.stateChanged.connect(MainWindow.ChangeSaveImg)
+        self.bTriggerManual.clicked.connect(MainWindow.handle_gpiotrigger)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -294,5 +303,6 @@ class Ui_MainWindow(object):
         self.cbRecogniser.setCurrentText("")
         self.label.setText(QCoreApplication.translate("MainWindow", u"Engine:", None))
         self.cSaveImg.setText(QCoreApplication.translate("MainWindow", u"Save captures", None))
+        self.bTriggerManual.setText(QCoreApplication.translate("MainWindow", u"Trigger", None))
     # retranslateUi
 

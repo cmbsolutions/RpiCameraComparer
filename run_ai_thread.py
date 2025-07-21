@@ -32,5 +32,7 @@ class RunAIThread(QThread):
 
         rgb = cropped[...,:3].copy()
 
+        print(f"AI Cam{self.idx}")
         self.ai_captured_result.emit(rgb, self.idx, result)
+        print(f"AI Cam{self.idx} finished")
         self.finished.emit()
