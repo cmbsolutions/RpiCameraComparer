@@ -3,8 +3,8 @@ import re
 import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtCore import QSettings, Signal
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtCore import QSettings, Signal, Qt
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit
 from PySide6.QtGui import QIcon
 from qglpicamera2_wrapper import QGlPicamera2
 from mainWindow import Ui_MainWindow
@@ -159,6 +159,7 @@ class MainWindow(QtWidgets.QMainWindow):
  # Capture controls   
     def TestCam(self, checked: bool):
         cam_idx = int(self.sender().objectName()[3])
+        self._captured = 0
 
         widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
 
@@ -283,12 +284,32 @@ class MainWindow(QtWidgets.QMainWindow):
         self._save_images = getattr(self.ui, self.sender().objectName()).checked()
 
 
-    def closeEvent(self, event):
-        settings = QSettings("CMBSolutions", "RpiCameraComparer")
-        for idx in (0, 1):
-            settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
-        super().closeEvent(event)
+    def ExitApplicationHandler(self):
+        self.closeEvent(None)
 
+
+    def ask_for_password(self):
+        password, ok = QInputDialog.getText(self, "Exit", "Enter password to close:", QLineEdit.Password)
+        return ok and (password == "playstation2!")
+    
+
+    def closeEvent(self, event):
+        ok = self.ask_for_password()
+        if not ok:
+            event.ignore()
+        else:
+            settings = QSettings("CMBSolutions", "RpiCameraComparer")
+            for idx in (0, 1):
+                settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+            
+            super().closeEvent(event)
+
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Escape, Qt.Key_F4):
+            pass  # ignore
+        else:
+            super().keyPressEvent(event)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

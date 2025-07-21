@@ -11,14 +11,15 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
     QGridLayout, QHBoxLayout, QLabel, QLayout,
-    QMainWindow, QPushButton, QSizePolicy, QSlider,
-    QWidget)
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QSizePolicy, QSlider, QWidget)
 import icons_rc
 
 class Ui_MainWindow(object):
@@ -26,22 +27,31 @@ class Ui_MainWindow(object):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(923, 564)
+        MainWindow.resize(923, 582)
+        icon = QIcon()
+        icon.addFile(u":/main/camera-video.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        MainWindow.setWindowIcon(icon)
+        self.actionExit_application = QAction(MainWindow)
+        self.actionExit_application.setObjectName(u"actionExit_application")
+        icon1 = QIcon()
+        icon1.addFile(u":/main/application-exit.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.actionExit_application.setIcon(icon1)
+        self.actionExit_application.setMenuRole(QAction.MenuRole.QuitRole)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.Cam0FocusPlus = QPushButton(self.centralwidget)
         self.Cam0FocusPlus.setObjectName(u"Cam0FocusPlus")
         self.Cam0FocusPlus.setGeometry(QRect(420, 420, 31, 22))
-        icon = QIcon()
-        icon.addFile(u":/main/list-add.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.Cam0FocusPlus.setIcon(icon)
+        icon2 = QIcon()
+        icon2.addFile(u":/main/list-add.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.Cam0FocusPlus.setIcon(icon2)
         self.Cam0FocusPlus.setIconSize(QSize(24, 24))
         self.Cam0FocusMinus = QPushButton(self.centralwidget)
         self.Cam0FocusMinus.setObjectName(u"Cam0FocusMinus")
         self.Cam0FocusMinus.setGeometry(QRect(10, 420, 31, 22))
-        icon1 = QIcon()
-        icon1.addFile(u":/main/list-remove.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.Cam0FocusMinus.setIcon(icon1)
+        icon3 = QIcon()
+        icon3.addFile(u":/main/list-remove.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.Cam0FocusMinus.setIcon(icon3)
         self.Cam0FocusMinus.setIconSize(QSize(24, 24))
         self.Cam0ResetROI = QPushButton(self.centralwidget)
         self.Cam0ResetROI.setObjectName(u"Cam0ResetROI")
@@ -136,7 +146,7 @@ class Ui_MainWindow(object):
         self.Cam1FocusPlus = QPushButton(self.centralwidget)
         self.Cam1FocusPlus.setObjectName(u"Cam1FocusPlus")
         self.Cam1FocusPlus.setGeometry(QRect(880, 420, 31, 22))
-        self.Cam1FocusPlus.setIcon(icon)
+        self.Cam1FocusPlus.setIcon(icon2)
         self.Cam1FocusPlus.setIconSize(QSize(24, 24))
         self.Cam1TestCapture = QPushButton(self.centralwidget)
         self.Cam1TestCapture.setObjectName(u"Cam1TestCapture")
@@ -144,7 +154,7 @@ class Ui_MainWindow(object):
         self.Cam1FocusMinus = QPushButton(self.centralwidget)
         self.Cam1FocusMinus.setObjectName(u"Cam1FocusMinus")
         self.Cam1FocusMinus.setGeometry(QRect(470, 420, 31, 22))
-        self.Cam1FocusMinus.setIcon(icon1)
+        self.Cam1FocusMinus.setIcon(icon3)
         self.Cam1FocusMinus.setIconSize(QSize(24, 24))
         self.Cam0Slider = QSlider(self.centralwidget)
         self.Cam0Slider.setObjectName(u"Cam0Slider")
@@ -182,18 +192,18 @@ class Ui_MainWindow(object):
         font1.setItalic(False)
         font1.setStrikeOut(False)
         self.StartCapture.setFont(font1)
-        icon2 = QIcon()
-        icon2.addFile(u":/main/gtk-media-play-ltr.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.StartCapture.setIcon(icon2)
+        icon4 = QIcon()
+        icon4.addFile(u":/main/gtk-media-play-ltr.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.StartCapture.setIcon(icon4)
         self.StartCapture.setIconSize(QSize(24, 24))
         self.ResetError = QPushButton(self.centralwidget)
         self.ResetError.setObjectName(u"ResetError")
         self.ResetError.setEnabled(False)
         self.ResetError.setGeometry(QRect(510, 500, 241, 51))
         self.ResetError.setFont(font1)
-        icon3 = QIcon()
-        icon3.addFile(u":/main/gtk-delete.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.ResetError.setIcon(icon3)
+        icon5 = QIcon()
+        icon5.addFile(u":/main/gtk-delete.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.ResetError.setIcon(icon5)
         self.ResetError.setIconSize(QSize(24, 24))
         self.Cam0SaveCapture = QPushButton(self.centralwidget)
         self.Cam0SaveCapture.setObjectName(u"Cam0SaveCapture")
@@ -212,9 +222,9 @@ class Ui_MainWindow(object):
         self.bTriggerManual = QPushButton(self.centralwidget)
         self.bTriggerManual.setObjectName(u"bTriggerManual")
         self.bTriggerManual.setGeometry(QRect(760, 500, 151, 51))
-        icon4 = QIcon()
-        icon4.addFile(u":/main/gtk-media-record.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.bTriggerManual.setIcon(icon4)
+        icon6 = QIcon()
+        icon6.addFile(u":/main/gtk-media-record.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.bTriggerManual.setIcon(icon6)
         self.bTriggerManual.setIconSize(QSize(24, 24))
         MainWindow.setCentralWidget(self.centralwidget)
         self.Frame_Error.raise_()
@@ -237,6 +247,15 @@ class Ui_MainWindow(object):
         self.label.raise_()
         self.cSaveImg.raise_()
         self.bTriggerManual.raise_()
+        self.menuBar = QMenuBar(MainWindow)
+        self.menuBar.setObjectName(u"menuBar")
+        self.menuBar.setGeometry(QRect(0, 0, 923, 19))
+        self.menuFile = QMenu(self.menuBar)
+        self.menuFile.setObjectName(u"menuFile")
+        MainWindow.setMenuBar(self.menuBar)
+
+        self.menuBar.addAction(self.menuFile.menuAction())
+        self.menuFile.addAction(self.actionExit_application)
 
         self.retranslateUi(MainWindow)
         self.Cam0ResetROI.clicked.connect(MainWindow.ResetCamRoi)
@@ -255,12 +274,14 @@ class Ui_MainWindow(object):
         self.cbRecogniser.currentIndexChanged.connect(MainWindow.ChangeEngine)
         self.cSaveImg.stateChanged.connect(MainWindow.ChangeSaveImg)
         self.bTriggerManual.clicked.connect(MainWindow.handle_gpiotrigger)
+        self.actionExit_application.triggered.connect(MainWindow.ExitApplicationHandler)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"RPICameraComparer v0.1 by CMBSolutions 2025", None))
+        self.actionExit_application.setText(QCoreApplication.translate("MainWindow", u"Exit application", None))
 #if QT_CONFIG(tooltip)
         self.Cam0FocusPlus.setToolTip(QCoreApplication.translate("MainWindow", u"Increase focus distance", None))
 #endif // QT_CONFIG(tooltip)
@@ -304,5 +325,6 @@ class Ui_MainWindow(object):
         self.label.setText(QCoreApplication.translate("MainWindow", u"Engine:", None))
         self.cSaveImg.setText(QCoreApplication.translate("MainWindow", u"Save captures", None))
         self.bTriggerManual.setText(QCoreApplication.translate("MainWindow", u"Trigger", None))
+        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi
 
