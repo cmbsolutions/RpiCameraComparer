@@ -1,44 +1,74 @@
 import sys
 import re
-import threading
 import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtWidgets import QFileDialog, QWidget
+from PySide6.QtCore import QSettings, Signal
+from PySide6.QtWidgets import QFileDialog
+from PySide6.QtGui import QIcon
 from qglpicamera2_wrapper import QGlPicamera2
 from mainWindow import Ui_MainWindow
 from functools import partial
 from libcamera import controls
 from capture_thread import CaptureThread
+from run_ocr_thread import RunOCRThread
+from run_ai_thread import RunAIThread
 from PIL import Image
 from segment_digits import ai_helper
 import tensorflow as tf
-import pytesseract
 from enumerations import EngineType
+from pathlib import Path
+from gpiozero import Button, OutputDevice
 
+# ───── Configuration ─────
+TRIGGER_PIN = 4
+OUTPUT_PIN = 22
+PULSE_TIME = 0.5  # seconds
+
+BASE = Path(__file__).parent.resolve()
+IMG_DIR = BASE / "Captures"
+IMG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# ----- Main class -----
 class MainWindow(QtWidgets.QMainWindow):
+    gpio_triggered = Signal()
+
     def __init__(self):
         super().__init__()
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.Frame_Error.hide()
-        self._lens_pos = {}
+        settings = QSettings("CMBSolutions", "RpiCameraComparer")
+        self._lens_pos = [float(settings.value(f"lensposition/{i}", 0.0)) for i in (0, 1)]
         self._focus_supported = {}
+        self._frame_array = {}
         self.collecting = False
-        self.ocr_lock = threading.Lock()
-        self.predict_lock = threading.Lock()
-        self._capture_thread = None
+        self._capture_thread = {}
+        self._ocr_thread = {}
+        self._ai_thread = {}
         self._capturing = False
+        self._captured_digits = {}
+        self._captured = 0
         self._halt = False
-        self._engine = EngineType.AI_MODEL
+        self._engine = EngineType.PYTESSERACT_OCR
+        self._save_images = True
 
         for engine in EngineType:
             getattr(self.ui, "cbRecogniser").addItem(engine.value)
 
         # This is the AI model
-        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model5.keras")
+        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model6.keras")
         
+        self.gpio_triggered.connect(self.onGpioTriggered)
+
+        # Setup GPIO
+        self.gpiotrigger = Button(TRIGGER_PIN, pull_up=True, bounce_time=0.05)
+        self.gpiooutput = OutputDevice(OUTPUT_PIN)
+        self.gpiooutput.on()
+        self.gpiotrigger.when_pressed = self.handle_gpiotrigger
+
         QtCore.QTimer.singleShot(100, self._insert_cameras)
     
 
@@ -73,7 +103,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._focus_supported[idx] = True
                 camw.picam2.set_controls({"AfMode": controls.AfModeEnum.Manual})
                 mn, mx, df = camw.picam2.camera_controls["LensPosition"]
-                self._lens_pos[idx] = df
+                
+                if self._lens_pos[idx] != df:
+                    getattr(self.ui, f"Cam{idx}Source").picam2.set_controls({"LensPosition": self._lens_pos[idx]})
+                    df = self._lens_pos[idx]
+                else:
+                    self._lens_pos[idx] = df
+
                 getattr(self.ui, f"Cam{idx}Slider").setMinimum(int(mn*10))
                 getattr(self.ui, f"Cam{idx}Slider").setMaximum(int(mx*10))
                 getattr(self.ui, f"Cam{idx}Slider").setValue(int(df*10))
@@ -90,31 +126,7 @@ class MainWindow(QtWidgets.QMainWindow):
         widget = getattr(self.ui, f"Cam{cam_index}Source")
         widget.set_overlay(None)
 
-    
-    def TestCam(self, checked: bool):
-        cam_idx = int(self.sender().objectName()[3])
-
-        getattr(self.ui, f"Cam{cam_idx}TestCapture").setEnabled(False)
-
-        widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
-
-        self._capture_thread = CaptureThread(widget)
-        self._capture_thread.imgage_captured.connect(self.handleCaptured)
-        self._capture_thread.finished.connect(lambda: getattr(self.ui, f"Cam{cam_idx}TestCapture").setEnabled(True))
-        self._capture_thread.start()
-
-
-    def handleCaptured(self, frame_array, cam_idx):
-        self._cam_idx = cam_idx
-        self._frame_array = frame_array
-
-        match self._engine:
-            case EngineType.AI_MODEL:
-                threading.Thread(target=self.predict_roi_digits).start()
-            case EngineType.PYTESSERACT_OCR:
-                threading.Thread(target=self.run_dual_ocr).start() 
-
-    
+# Camera focus controls
     def CamOnFocusButton(self, checked: bool):
         btn = self.sender()
         name = btn.objectName()
@@ -133,8 +145,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._lens_pos[cam_idx] = pos
 
         getattr(self.ui, f"Cam{cam_idx}Source").picam2.set_controls({"LensPosition": pos})
-
-        print(f"Camera {cam_idx} focus set to {pos:.2f}")
+        getattr(self.ui, f"Cam{cam_idx}Slider").setValue(int(pos*10))
 
 
     def CamOnFocusSlider(self):
@@ -145,48 +156,105 @@ class MainWindow(QtWidgets.QMainWindow):
         self._lens_pos[cam_idx] = pos
         getattr(self.ui, f"Cam{cam_idx}Source").picam2.set_controls({"LensPosition": pos})
 
-        print(f"Camera {cam_idx} focus set to {pos:.2f}")
+ # Capture controls   
+    def TestCam(self, checked: bool):
+        cam_idx = int(self.sender().objectName()[3])
+
+        widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
+
+        self._capture_thread[cam_idx] = CaptureThread(widget)
+        self._capture_thread[cam_idx].image_captured.connect(self.handleCaptured)
+        self._capture_thread[cam_idx].finished.connect(lambda: lambda: self._capture_thread[cam_idx].deleteLater())
+        self._capture_thread[cam_idx].start()
+
+# Callback from capture_array from camera
+    def handleCaptured(self, frame_array, cam_idx):
+        self._cam_idx = cam_idx
+        self._frame_array[cam_idx] = frame_array
+        roi = getattr(self.ui, f"Cam{cam_idx}Source")._roi
+
+        match self._engine:
+            case EngineType.AI_MODEL:
+                self._ai_thread[cam_idx] = RunAIThread(frame_array, cam_idx, roi, self._model)
+                self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
+                self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
+                self._ai_thread[cam_idx].start()
+            case EngineType.PYTESSERACT_OCR:
+                self._ocr_thread[cam_idx] = RunOCRThread(frame_array, cam_idx, roi)
+                self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
+                self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
+                self._ocr_thread[cam_idx].start()
+
+
+    def digits_captured(self, rgb, cam_idx, digits):
+        if not self._halt:
+            getattr(self.ui, f"Cam{cam_idx}CapturedValue").setText(f"CAM{cam_idx}: {digits}")
+            self._captured_digits[cam_idx] = digits
+            self._captured += 1
+
+        if self._save_images:
+            img = Image.fromarray(rgb)
+            img.save(IMG_DIR / f"{digits}.png", format="PNG")
+
+        if self._captured >= 2:
+            if self._captured_digits[0] != self._captured_digits[1]:
+                self.gpiooutput.off()
+                self._halt = True
+                getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
+                getattr(self.ui, "Frame_Error").show()
+                getattr(self.ui, "ResetError").setEnabled(True)
+            else:
+                getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
+                getattr(self.ui, "Frame_Error").show()
+
+
+    def handle_gpiotrigger(self):
+        self.gpio_triggered.emit()
+
+
+    def onGpioTriggered(self):
+        if self._capturing and not self._halt:
+            self._captured = 0
+
+            self.CompareImages()
 
 
     def StartCapturing(self):
         if self._capturing:
             self._capturing = False
+            getattr(self.ui, "StartCapture").setText("Start capture")
+            getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-play-ltr.png"))
         else:
             self._capturing = True
-            QtCore.QTimer.singleShot(500, self.CompareImages)
+            getattr(self.ui, "StartCapture").setText("Stop capture")
+            getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-pause.png"))
 
 
     def CompareImages(self):
         for idx in (0, 1):
             widget = getattr(self.ui, f"Cam{idx}Source").picam2
 
-            self._capture_thread = CaptureThread(widget)
-            self._capture_thread.imgage_captured.connect(self.handleCaptured)
-            self._capture_thread.finished.connect(lambda: getattr(self.ui, f"Cam{idx}TestCapture").setEnabled(True))
-            self._capture_thread.start()
-            break
-
-        if self._capturing and not self._halt:
-            QtCore.QTimer.singleShot(500, self.CompareImages)
+            self._capture_thread[idx] = CaptureThread(widget)
+            self._capture_thread[idx].image_captured.connect(self.handleCaptured)
+            self._capture_thread[idx].finished.connect(lambda: self._capture_thread[idx].quit())
+            self._capture_thread[idx].start()
 
 
     def ResetError(self):
         getattr(self.ui, f"Frame_Error").hide()
         getattr(self.ui, f"ResetError").setEnabled(False)
         self._halt = False
-        if self._capturing:
-            QtCore.QTimer.singleShot(1000, self.CompareImages)
+        self.gpiooutput.on()
 
     
     def SaveFileDialog(self):
         cam_idx = int(self.sender().objectName()[3])
-        getattr(self.ui, f"Cam{cam_idx}TestCapture").setEnabled(False)
         widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
 
-        self._capture_thread = CaptureThread(widget)
-        self._capture_thread.imgage_captured.connect(self.SaveFileDialogHandler)
-        self._capture_thread.finished.connect(lambda: getattr(self.ui, f"Cam{cam_idx}TestCapture").setEnabled(True))
-        self._capture_thread.start()
+        self._capture_thread[cam_idx] = CaptureThread(widget)
+        self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
+        self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
+        self._capture_thread[cam_idx].start()
 
 
     def SaveFileDialogHandler(self, frame_array, cam_idx):
@@ -195,10 +263,11 @@ class MainWindow(QtWidgets.QMainWindow):
             caption="Save Image As...",
             dir="",
             filter="PNG Files (*.png);;JPEG Files (*.jpg *.jpeg);;All Files (*)",
-            options=QFileDialog.Options()  # you can OR in flags like DontUseNativeDialog
+            options=QFileDialog.Options()
         )
         if filename:
-            img = Image.fromarray(frame_array, mode="RGBA")
+            rgb = frame_array[...,:3].copy()
+            img = Image.fromarray(frame_array)
             img.save(f"{filename}.png", format="PNG")
 
 
@@ -210,57 +279,15 @@ class MainWindow(QtWidgets.QMainWindow):
                 break
 
 
-    def run_dual_ocr(self):
-        with self.ocr_lock:
-            roi = getattr(self.ui, f"Cam{self._cam_idx}Source")._roi
-            #roi2 = getattr(self.ui, f"Cam{self._cam_idx+1}Source")._roi
-
-            
-            x1, y1, x2, y2 = roi
-            cropped = self._frame_array[y1:y2, x1:x2]
-            gray = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
-            text = pytesseract.image_to_string(gray, config="--oem 3 --psm 7 -c tessedit_char_whitelist=0123456789")
-            digits1 = ''.join(filter(str.isdigit, text))
-
-            #digits2 = extract_digits(self._frame_array, roi2)
-
-            #digits1 = ocr_preprocess.clean_ocr(digits1)
-            #digits2 = ocr_preprocess.clean_ocr(digits2)
-            
-            if not self._halt:
-                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {digits1}")
-                #getattr(self.ui, f"Cam{self._cam_idx+1}CapturedValue").setText(f"CAM{self._cam_idx+1}: {digits2}")
-            
-            img = Image.fromarray(cropped, mode="RGBA")
-            img.save(f"Test/{digits1}.png", format="PNG")
-            #if digits1 != digits2:
-            #    getattr(self.ui, f"Frame_Error").show()
-            #    getattr(self.ui, f"ResetError").setEnabled(True)
-            #    self._halt = True
+    def ChangeSaveImg(self, idx):
+        self._save_images = getattr(self.ui, self.sender().objectName()).checked()
 
 
-    def predict_roi_digits(self):
-        with self.predict_lock:
-            roi = getattr(self.ui, f"Cam{self._cam_idx}Source")._roi
-
-            x1, y1, x2, y2 = roi
-            cropped = self._frame_array[y1:y2, x1:x2]
-
-            rois = ai_helper.segment_digits(self, cropped)
-            digits = []
-            for _, _, digit_img in rois:
-                # resize to your CNN�s input size (64�64), normalize, etc.
-                d = cv2.resize(digit_img, (32,32), interpolation=cv2.INTER_CUBIC)
-                d = d.reshape(1,32,32,1)/255.0
-                pred = self._model.predict(d)
-                digits.append(str(pred.argmax()))
-            result = "".join(digits)  
-
-            img = Image.fromarray(cropped, mode="RGBA")
-            img.save(f"Test/{result}.png", format="PNG")
-
-            if not self._halt:
-                getattr(self.ui, f"Cam{self._cam_idx}CapturedValue").setText(f"CAM{self._cam_idx}: {result}")     
+    def closeEvent(self, event):
+        settings = QSettings("CMBSolutions", "RpiCameraComparer")
+        for idx in (0, 1):
+            settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+        super().closeEvent(event)
 
 
 if __name__ == "__main__":

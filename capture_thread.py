@@ -1,8 +1,9 @@
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, QThread, Signal
 
 
 class CaptureThread(QThread):
-    imgage_captured = Signal(object, int)
+    finished = Signal()
+    image_captured = Signal(object, int)
 
     def __init__(self, picam2):
         super().__init__()
@@ -12,4 +13,7 @@ class CaptureThread(QThread):
     def run(self):
         arr = self._picam2.capture_array()
         
-        self.imgage_captured.emit(arr, self._picam2.camera_idx)
+        print(f"Captured Cam{self._picam2.camera_idx}")
+        self.image_captured.emit(arr, self._picam2.camera_idx)
+        print(f"Cam{self._picam2.camera_idx} finished")
+        self.finished.emit()

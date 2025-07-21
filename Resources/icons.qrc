@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="main">
+    <file>gtk-media-record.png</file>
+    <file>system-run.png</file>
     <file>application-exit.png</file>
     <file>gtk-delete.png</file>
     <file>gtk-media-pause.png</file>

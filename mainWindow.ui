@@ -523,7 +523,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>530</y>
+      <y>510</y>
       <width>211</width>
       <height>22</height>
      </rect>
@@ -539,13 +539,52 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>510</y>
+      <y>490</y>
       <width>57</width>
       <height>14</height>
      </rect>
     </property>
     <property name="text">
      <string>Engine:</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="cSaveImg">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>540</y>
+      <width>211</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save captures</string>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="bTriggerManual">
+    <property name="geometry">
+     <rect>
+      <x>760</x>
+      <y>500</y>
+      <width>151</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Trigger</string>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/gtk-media-record.png</normaloff>:/main/gtk-media-record.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>24</width>
+      <height>24</height>
+     </size>
     </property>
    </widget>
    <zorder>Frame_Error</zorder>
@@ -566,6 +605,8 @@
    <zorder>Cam0SaveCapture</zorder>
    <zorder>cbRecogniser</zorder>
    <zorder>label</zorder>
+   <zorder>cSaveImg</zorder>
+   <zorder>bTriggerManual</zorder>
   </widget>
  </widget>
  <resources>
@@ -788,11 +829,43 @@
    <hints>
     <hint type="sourcelabel">
      <x>69</x>
-     <y>487</y>
+     <y>520</y>
     </hint>
     <hint type="destinationlabel">
      <x>44</x>
      <y>525</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cSaveImg</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ChangeSaveImg(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>65</x>
+     <y>551</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>268</x>
+     <y>481</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>bTriggerManual</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>handle_gpiotrigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>861</x>
+     <y>522</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>869</x>
+     <y>460</y>
     </hint>
    </hints>
   </connection>
@@ -806,5 +879,7 @@
   <slot>ResetError()</slot>
   <slot>SaveFileDialog()</slot>
   <slot>ChangeEngine()</slot>
+  <slot>ChangeSaveImg(int)</slot>
+  <slot>handle_gpiotrigger()</slot>
  </slots>
 </ui>

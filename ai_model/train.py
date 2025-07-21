@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 BASE = Path(__file__).parent.resolve()
-DATA_DIR = BASE / "TrainingSet5/"
+DATA_DIR = BASE / "TrainingSet6/"
 print(f"Using data directory: {DATA_DIR}")
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -15,9 +15,9 @@ dataset = tf.keras.preprocessing.image_dataset_from_directory(
     label_mode="int",
     color_mode="grayscale",
     batch_size=64,
-    image_size=(32,32),
+    image_size=(64,64),
     shuffle=True,
-    seed=84,
+    seed=32,
 )
 
 # 2) Normalize & cache/prefetch
@@ -29,8 +29,8 @@ train_batches = dataset.skip(200//64)
 
 # 4) Define a small CNN
 model = models.Sequential([
-    layers.Input((32,32,1)),
-    layers.Conv2D(32, 3, activation="relu"),
+    layers.Input((64,64,1)),
+    layers.Conv2D(64, 3, activation="relu"),
     layers.MaxPool2D(),
     layers.Conv2D(64, 3, activation="relu"),
     layers.MaxPool2D(),
@@ -53,4 +53,4 @@ history = model.fit(
 )
 
 # 6) Save your model
-model.save(BASE / "digit_cnn_model5.keras")
+model.save(BASE / "digit_cnn_model6.keras")
