@@ -4,7 +4,7 @@ import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import QSettings, Signal, Qt
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QDialog
 from PySide6.QtGui import QIcon
 from qglpicamera2_wrapper import QGlPicamera2
 from mainWindow import Ui_MainWindow
@@ -19,6 +19,7 @@ import tensorflow as tf
 from enumerations import EngineType
 from pathlib import Path
 from gpiozero import Button, OutputDevice
+from settings import SettingsDialog
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
@@ -52,13 +53,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self._captured_digits = {}
         self._captured = 0
         self._halt = False
-        self._engine = EngineType.PYTESSERACT_OCR
-        self._save_images = True
+        self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR)
+        self._save_images = settings.value("saveimages", True)
+        self._is_locked = settings.value("is_locked", True)
+        self._password = settings.value("password", "RPICameraComparer")
 
-        for engine in EngineType:
-            getattr(self.ui, "cbRecogniser").addItem(engine.value)
-
-        # This is the AI model
+         # This is the AI model
         self._model = tf.keras.models.load_model("ai_model/digit_cnn_model6.keras")
         
         self.gpio_triggered.connect(self.onGpioTriggered)
@@ -288,28 +288,49 @@ class MainWindow(QtWidgets.QMainWindow):
         self.closeEvent(None)
 
 
+    def SettingsHandler(self):
+        settings = SettingsDialog(self)
+        settings.settings_changed.connect(self.ReloadSettings)
+    
+        result = settings.exec()
+
+
+    def ReloadSettings(self):
+        settings = QSettings("CMBSolutions", "RpiCameraComparer")
+
+        self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR)
+        self._save_images = settings.value("saveimages", True)
+        self._is_locked = settings.value("is_locked", True)
+        self._password = settings.value("password", "RPICameraComparer")
+
+
+    def UnlockHandler(self):
+        password, ok = QInputDialog.getText(self, "Unlock", "Enter password to unlock:", QLineEdit.Password)
+        return ok and (password == self._password)
+
+
     def ask_for_password(self):
         password, ok = QInputDialog.getText(self, "Exit", "Enter password to close:", QLineEdit.Password)
-        return ok and (password == "playstation2!")
+        return ok and (password == self._password)
     
 
     def closeEvent(self, event):
-        ok = self.ask_for_password()
-        if not ok:
-            event.ignore()
-        else:
-            settings = QSettings("CMBSolutions", "RpiCameraComparer")
-            for idx in (0, 1):
-                settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
-            
-            super().closeEvent(event)
+        if self._is_locked:
+            ok = self.ask_for_password()
+            if not ok:
+                event.ignore()
+                return
+                
+        super().closeEvent(event)
 
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Escape, Qt.Key_F4):
-            pass  # ignore
-        else:
-            super().keyPressEvent(event)
+        if self._is_locked:
+            if event.key() in (Qt.Key_Escape, Qt.Key_F4):
+                pass  # ignore
+            else:
+                super().keyPressEvent(event)
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
