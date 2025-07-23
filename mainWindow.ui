@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1323</width>
-    <height>700</height>
+    <height>729</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -76,10 +76,10 @@
    <widget class="QPushButton" name="Cam0ResetROI">
     <property name="geometry">
      <rect>
-      <x>210</x>
+      <x>10</x>
       <y>590</y>
-      <width>80</width>
-      <height>22</height>
+      <width>101</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="toolTip">
@@ -92,10 +92,10 @@
    <widget class="QPushButton" name="Cam0TestCapture">
     <property name="geometry">
      <rect>
-      <x>300</x>
+      <x>120</x>
       <y>590</y>
-      <width>80</width>
-      <height>22</height>
+      <width>111</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="toolTip">
@@ -280,8 +280,8 @@
      <rect>
       <x>660</x>
       <y>590</y>
-      <width>80</width>
-      <height>22</height>
+      <width>111</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="toolTip">
@@ -320,10 +320,10 @@
    <widget class="QPushButton" name="Cam1TestCapture">
     <property name="geometry">
      <rect>
-      <x>750</x>
+      <x>780</x>
       <y>590</y>
-      <width>80</width>
-      <height>22</height>
+      <width>111</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="toolTip">
@@ -446,9 +446,9 @@
    <widget class="QPushButton" name="StartCapture">
     <property name="geometry">
      <rect>
-      <x>390</x>
-      <y>620</y>
-      <width>241</width>
+      <x>280</x>
+      <y>650</y>
+      <width>371</width>
       <height>51</height>
      </rect>
     </property>
@@ -481,9 +481,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>660</x>
-      <y>620</y>
-      <width>241</width>
+      <x>670</x>
+      <y>650</y>
+      <width>371</width>
       <height>51</height>
      </rect>
     </property>
@@ -513,72 +513,27 @@
    <widget class="QPushButton" name="Cam0SaveCapture">
     <property name="geometry">
      <rect>
-      <x>390</x>
+      <x>240</x>
       <y>590</y>
-      <width>101</width>
-      <height>22</height>
+      <width>121</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="text">
      <string>Save capture</string>
     </property>
    </widget>
-   <widget class="QComboBox" name="cbRecogniser">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>630</y>
-      <width>211</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="editable">
-     <bool>false</bool>
-    </property>
-    <property name="currentText">
-     <string/>
-    </property>
-   </widget>
-   <widget class="QLabel" name="label">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>610</y>
-      <width>57</width>
-      <height>14</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Engine:</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="cSaveImg">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>660</y>
-      <width>211</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Save captures</string>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
    <widget class="QPushButton" name="bTriggerManual">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>620</y>
+      <x>1160</x>
+      <y>650</y>
       <width>151</width>
       <height>51</height>
      </rect>
     </property>
     <property name="text">
-     <string>Trigger</string>
+     <string>Manual trigger</string>
     </property>
     <property name="icon">
      <iconset resource="Resources/icons.qrc">
@@ -607,9 +562,6 @@
    <zorder>StartCapture</zorder>
    <zorder>ResetError</zorder>
    <zorder>Cam0SaveCapture</zorder>
-   <zorder>cbRecogniser</zorder>
-   <zorder>label</zorder>
-   <zorder>cSaveImg</zorder>
    <zorder>bTriggerManual</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
@@ -640,7 +592,7 @@
     <string>Exit application</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::MenuRole::QuitRole</enum>
+    <enum>QAction::MenuRole::TextHeuristicRole</enum>
    </property>
   </action>
   <action name="actionSettings">
@@ -863,38 +815,6 @@
     <hint type="destinationlabel">
      <x>187</x>
      <y>506</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>cbRecogniser</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>ChangeEngine()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>219</x>
-     <y>670</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>44</x>
-     <y>525</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>cSaveImg</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>ChangeSaveImg(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>215</x>
-     <y>698</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>268</x>
-     <y>481</y>
     </hint>
    </hints>
   </connection>

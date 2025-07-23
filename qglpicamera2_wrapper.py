@@ -61,33 +61,47 @@ class QGlPicamera2(QGlPicamera2):
 
         super().mousePressEvent(ev)
 
+
     def mouseMoveEvent(self, ev):
         if self._rubber.isVisible():
             self._rubber.setGeometry(QRect(self._origin, ev.pos()).normalized())
 
         super().mouseMoveEvent(ev)
 
+
     def mouseReleaseEvent(self, ev):
         if ev.button() == Qt.LeftButton and self._rubber.isVisible():
             self._rubber.hide()
             rect = self._rubber.geometry()
-
-            # map from widget coords ? frame coords
-            fw, fh = self._frame_size.width(), self._frame_size.height()
-            ww, wh = self.width(), self.height()
-            x1 = int(rect.x() * fw / ww)
-            y1 = int(rect.y() * fh / wh)
-            x2 = int((rect.x()+rect.width())  * fw / ww)
-            y2 = int((rect.y()+rect.height()) * fh / wh)
-            
-            self._roi = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
-            
-            # build an RGBA overlay with a semi-transparent green box
-            overlay = np.zeros((fh, fw, 4), dtype=np.uint8)
-            overlay[y1:y2, x1:x2] = (0, 255, 0, 128)
-
-            # hand it off to Picamera2
-            self.set_overlay(overlay)
+            self.set_roi(rect)
 
         super().mouseReleaseEvent(ev)
+
+
+    def set_roi(self, roi_rect=None):
+        fw, fh = self._frame_size.width(), self._frame_size.height()
+        if roi_rect is not None and isinstance(roi_rect, QRect):
+            # Coming from mouse event
+            ww, wh = self.width(), self.height()
+            x1 = int(roi_rect.x() * fw / ww)
+            y1 = int(roi_rect.y() * fh / wh)
+            x2 = int((roi_rect.x() + roi_rect.width()) * fw / ww)
+            y2 = int((roi_rect.y() + roi_rect.height()) * fh / wh)
+            self._roi = (min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2))
+        elif roi_rect is not None:
+            # Coming from settings (tuple)
+            self._roi = roi_rect
+        # else leave as is
+
+        self.update_overlay()
+
+    def update_overlay(self):
+        if self._roi is None:
+            self.set_overlay(None)
+            return
+        fw, fh = self._frame_size.width(), self._frame_size.height()
+        x1, y1, x2, y2 = self._roi
+        overlay = np.zeros((fh, fw, 4), dtype=np.uint8)
+        overlay[y1:y2, x1:x2] = (0, 255, 0, 128)
+        self.set_overlay(overlay)
 

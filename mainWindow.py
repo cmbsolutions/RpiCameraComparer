@@ -16,10 +16,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFrame,
-    QGridLayout, QHBoxLayout, QLabel, QLayout,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QSlider, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
+    QLabel, QLayout, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QSlider,
+    QWidget)
 import icons_rc
 
 class Ui_MainWindow(object):
@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(1323, 700)
+        MainWindow.resize(1323, 729)
         icon = QIcon()
         icon.addFile(u":/main/camera-video.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
@@ -36,7 +36,7 @@ class Ui_MainWindow(object):
         icon1 = QIcon()
         icon1.addFile(u":/main/application-exit.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.actionExit_application.setIcon(icon1)
-        self.actionExit_application.setMenuRole(QAction.MenuRole.QuitRole)
+        self.actionExit_application.setMenuRole(QAction.MenuRole.TextHeuristicRole)
         self.actionSettings = QAction(MainWindow)
         self.actionSettings.setObjectName(u"actionSettings")
         self.actionUnlock_application = QAction(MainWindow)
@@ -59,10 +59,10 @@ class Ui_MainWindow(object):
         self.Cam0FocusMinus.setIconSize(QSize(24, 24))
         self.Cam0ResetROI = QPushButton(self.centralwidget)
         self.Cam0ResetROI.setObjectName(u"Cam0ResetROI")
-        self.Cam0ResetROI.setGeometry(QRect(210, 590, 80, 22))
+        self.Cam0ResetROI.setGeometry(QRect(10, 590, 101, 41))
         self.Cam0TestCapture = QPushButton(self.centralwidget)
         self.Cam0TestCapture.setObjectName(u"Cam0TestCapture")
-        self.Cam0TestCapture.setGeometry(QRect(300, 590, 80, 22))
+        self.Cam0TestCapture.setGeometry(QRect(120, 590, 111, 41))
         self.frame = QFrame(self.centralwidget)
         self.frame.setObjectName(u"frame")
         self.frame.setGeometry(QRect(10, 10, 650, 511))
@@ -146,7 +146,7 @@ class Ui_MainWindow(object):
 
         self.Cam1ResetROI = QPushButton(self.centralwidget)
         self.Cam1ResetROI.setObjectName(u"Cam1ResetROI")
-        self.Cam1ResetROI.setGeometry(QRect(660, 590, 80, 22))
+        self.Cam1ResetROI.setGeometry(QRect(660, 590, 111, 41))
         self.Cam1FocusPlus = QPushButton(self.centralwidget)
         self.Cam1FocusPlus.setObjectName(u"Cam1FocusPlus")
         self.Cam1FocusPlus.setGeometry(QRect(1270, 540, 41, 41))
@@ -154,7 +154,7 @@ class Ui_MainWindow(object):
         self.Cam1FocusPlus.setIconSize(QSize(24, 24))
         self.Cam1TestCapture = QPushButton(self.centralwidget)
         self.Cam1TestCapture.setObjectName(u"Cam1TestCapture")
-        self.Cam1TestCapture.setGeometry(QRect(750, 590, 80, 22))
+        self.Cam1TestCapture.setGeometry(QRect(780, 590, 111, 41))
         self.Cam1FocusMinus = QPushButton(self.centralwidget)
         self.Cam1FocusMinus.setObjectName(u"Cam1FocusMinus")
         self.Cam1FocusMinus.setGeometry(QRect(660, 540, 41, 41))
@@ -189,7 +189,7 @@ class Ui_MainWindow(object):
         self.Frame_Error.setMidLineWidth(0)
         self.StartCapture = QPushButton(self.centralwidget)
         self.StartCapture.setObjectName(u"StartCapture")
-        self.StartCapture.setGeometry(QRect(390, 620, 241, 51))
+        self.StartCapture.setGeometry(QRect(280, 650, 371, 51))
         font1 = QFont()
         font1.setPointSize(14)
         font1.setBold(True)
@@ -203,7 +203,7 @@ class Ui_MainWindow(object):
         self.ResetError = QPushButton(self.centralwidget)
         self.ResetError.setObjectName(u"ResetError")
         self.ResetError.setEnabled(False)
-        self.ResetError.setGeometry(QRect(660, 620, 241, 51))
+        self.ResetError.setGeometry(QRect(670, 650, 371, 51))
         self.ResetError.setFont(font1)
         icon5 = QIcon()
         icon5.addFile(u":/main/gtk-delete.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
@@ -211,21 +211,10 @@ class Ui_MainWindow(object):
         self.ResetError.setIconSize(QSize(24, 24))
         self.Cam0SaveCapture = QPushButton(self.centralwidget)
         self.Cam0SaveCapture.setObjectName(u"Cam0SaveCapture")
-        self.Cam0SaveCapture.setGeometry(QRect(390, 590, 101, 22))
-        self.cbRecogniser = QComboBox(self.centralwidget)
-        self.cbRecogniser.setObjectName(u"cbRecogniser")
-        self.cbRecogniser.setGeometry(QRect(160, 630, 211, 22))
-        self.cbRecogniser.setEditable(False)
-        self.label = QLabel(self.centralwidget)
-        self.label.setObjectName(u"label")
-        self.label.setGeometry(QRect(160, 610, 57, 14))
-        self.cSaveImg = QCheckBox(self.centralwidget)
-        self.cSaveImg.setObjectName(u"cSaveImg")
-        self.cSaveImg.setGeometry(QRect(160, 660, 211, 20))
-        self.cSaveImg.setChecked(True)
+        self.Cam0SaveCapture.setGeometry(QRect(240, 590, 121, 41))
         self.bTriggerManual = QPushButton(self.centralwidget)
         self.bTriggerManual.setObjectName(u"bTriggerManual")
-        self.bTriggerManual.setGeometry(QRect(910, 620, 151, 51))
+        self.bTriggerManual.setGeometry(QRect(1160, 650, 151, 51))
         icon6 = QIcon()
         icon6.addFile(u":/main/gtk-media-record.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.bTriggerManual.setIcon(icon6)
@@ -247,9 +236,6 @@ class Ui_MainWindow(object):
         self.StartCapture.raise_()
         self.ResetError.raise_()
         self.Cam0SaveCapture.raise_()
-        self.cbRecogniser.raise_()
-        self.label.raise_()
-        self.cSaveImg.raise_()
         self.bTriggerManual.raise_()
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
@@ -277,8 +263,6 @@ class Ui_MainWindow(object):
         self.StartCapture.clicked.connect(MainWindow.StartCapturing)
         self.ResetError.clicked.connect(MainWindow.ResetError)
         self.Cam0SaveCapture.clicked.connect(MainWindow.SaveFileDialog)
-        self.cbRecogniser.currentIndexChanged.connect(MainWindow.ChangeEngine)
-        self.cSaveImg.stateChanged.connect(MainWindow.ChangeSaveImg)
         self.bTriggerManual.clicked.connect(MainWindow.handle_gpiotrigger)
         self.actionExit_application.triggered.connect(MainWindow.ExitApplicationHandler)
         self.actionSettings.triggered.connect(MainWindow.SettingsHandler)
@@ -331,10 +315,7 @@ class Ui_MainWindow(object):
         self.StartCapture.setText(QCoreApplication.translate("MainWindow", u"Start capturing", None))
         self.ResetError.setText(QCoreApplication.translate("MainWindow", u"Reset error", None))
         self.Cam0SaveCapture.setText(QCoreApplication.translate("MainWindow", u"Save capture", None))
-        self.cbRecogniser.setCurrentText("")
-        self.label.setText(QCoreApplication.translate("MainWindow", u"Engine:", None))
-        self.cSaveImg.setText(QCoreApplication.translate("MainWindow", u"Save captures", None))
-        self.bTriggerManual.setText(QCoreApplication.translate("MainWindow", u"Trigger", None))
+        self.bTriggerManual.setText(QCoreApplication.translate("MainWindow", u"Manual trigger", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi
 

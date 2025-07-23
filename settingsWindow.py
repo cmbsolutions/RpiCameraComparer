@@ -24,16 +24,16 @@ class Ui_DialogSettings(object):
         if not DialogSettings.objectName():
             DialogSettings.setObjectName(u"DialogSettings")
         DialogSettings.setWindowModality(Qt.WindowModality.ApplicationModal)
-        DialogSettings.resize(401, 253)
+        DialogSettings.resize(401, 269)
         DialogSettings.setModal(True)
         self.buttonBox = QDialogButtonBox(DialogSettings)
         self.buttonBox.setObjectName(u"buttonBox")
-        self.buttonBox.setGeometry(QRect(10, 220, 391, 32))
+        self.buttonBox.setGeometry(QRect(0, 230, 391, 32))
         self.buttonBox.setOrientation(Qt.Orientation.Horizontal)
         self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Ok)
         self.formLayoutWidget = QWidget(DialogSettings)
         self.formLayoutWidget.setObjectName(u"formLayoutWidget")
-        self.formLayoutWidget.setGeometry(QRect(0, 0, 401, 211))
+        self.formLayoutWidget.setGeometry(QRect(10, 10, 381, 211))
         self.formLayout = QFormLayout(self.formLayoutWidget)
         self.formLayout.setObjectName(u"formLayout")
         self.formLayout.setSizeConstraint(QLayout.SizeConstraint.SetMinAndMaxSize)
@@ -89,8 +89,6 @@ class Ui_DialogSettings(object):
 
 
         self.retranslateUi(DialogSettings)
-        self.buttonBox.accepted.connect(DialogSettings.accept)
-        self.buttonBox.rejected.connect(DialogSettings.reject)
         self.comboBoxEngine.currentIndexChanged.connect(DialogSettings.engine_changed)
         self.checkBoxClosing.checkStateChanged.connect(DialogSettings.closing_changed)
         self.checkBoxSaveImages.checkStateChanged.connect(DialogSettings.save_changed)
@@ -102,10 +100,12 @@ class Ui_DialogSettings(object):
     def retranslateUi(self, DialogSettings):
         DialogSettings.setWindowTitle(QCoreApplication.translate("DialogSettings", u"RPICameraComparer Settings", None))
         self.label.setText(QCoreApplication.translate("DialogSettings", u"Engine :", None))
+        self.comboBoxEngine.setCurrentText("")
         self.label_2.setText(QCoreApplication.translate("DialogSettings", u"No closing :", None))
         self.checkBoxClosing.setText("")
         self.label_3.setText(QCoreApplication.translate("DialogSettings", u"Save images", None))
         self.checkBoxSaveImages.setText("")
         self.label_4.setText(QCoreApplication.translate("DialogSettings", u"Unlock password :", None))
+        self.lineEditPassword.setText(QCoreApplication.translate("DialogSettings", u"password", None))
     # retranslateUi
 

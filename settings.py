@@ -20,24 +20,27 @@ class SettingsDialog(QtWidgets.QDialog):
             self.ui.comboBoxEngine.addItem(engine.value)
 
         self.ui.comboBoxEngine.setCurrentText(settings.value("engine", EngineType.PYTESSERACT_OCR.value))
-        self.ui.checkBoxSaveImages.checked = settings.value("saveimages", True)
-        self.ui.checkBoxClosing.checked = settings.value("is_locked", True)
+        self.ui.checkBoxSaveImages.setChecked(settings.value("saveimages", True, type=bool))
+        self.ui.checkBoxClosing.setChecked(settings.value("is_locked", True, type=bool))
         self.ui.lineEditPassword.setText(settings.value("password", "RPICameraComparer"))
 
         self._old_password = settings.value("password", "RPICameraComparer")
-
+        self.ui.buttonBox.accepted.connect(self.accept)
+        self.ui.buttonBox.rejected.connect(self.reject)
     
+
     def accept(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
-        settings.value("engine", self.ui.comboBoxEngine.itemText())
-        settings.value("saveimages", self.ui.checkBoxSaveImages.checked)
-        settings.value("is_locked", self.ui.checkBoxClosing.checked)
-        settings.value("password", self.ui.lineEditPassword.text())
+        settings.setValue("engine", self.ui.comboBoxEngine.currentText())
+        settings.setValue("saveimages", self.ui.checkBoxSaveImages.isChecked())
+        settings.setValue("is_locked", self.ui.checkBoxClosing.isChecked())
+        settings.setValue("password", self.ui.lineEditPassword.text())
         self.settings_changed.emit()
+        super().accept()
     
 
     def reject(self):
-        return
+        super().reject()
     
 
     def engine_changed(self):
@@ -60,7 +63,7 @@ class SettingsDialog(QtWidgets.QDialog):
                 return
             else:
                 QMessageBox.critical(self, "Wrong password", "Passwords do not match.")
-                self.ui.lineEditPassword.setText(self._old_password)
+                self.ui.lineEditPassword.setCurrentText(self._old_password)
         else:
             QMessageBox.critical(self, "Validation error", "Passwords did not validate.")
-            self.ui.lineEditPassword.setText(self._old_password)
+            self.ui.lineEditPassword.setCurrentText(self._old_password)

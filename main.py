@@ -43,6 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.Frame_Error.hide()
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
         self._lens_pos = [float(settings.value(f"lensposition/{i}", 0.0)) for i in (0, 1)]
+        self._roivals = [settings.value(f"roi/{i}", None) for i in (0, 1)]
         self._focus_supported = {}
         self._frame_array = {}
         self.collecting = False
@@ -53,9 +54,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._captured_digits = {}
         self._captured = 0
         self._halt = False
-        self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR)
-        self._save_images = settings.value("saveimages", True)
-        self._is_locked = settings.value("is_locked", True)
+        self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
+        self._save_images = settings.value("saveimages", True, type=bool)
+        self._is_locked = settings.value("is_locked", True, type=bool)
         self._password = settings.value("password", "RPICameraComparer")
 
          # This is the AI model
@@ -120,11 +121,29 @@ class MainWindow(QtWidgets.QMainWindow):
                 getattr(self.ui, f"Cam{idx}FocusPlus").setEnabled(False)
                 getattr(self.ui, f"Cam{idx}FocusMinus").setEnabled(False)
 
+        self.LoadCamRoi()
 
+# ROI stuff
     def ResetCamRoi(self, checked: bool):
         cam_index = int(self.sender().objectName()[3])
         widget = getattr(self.ui, f"Cam{cam_index}Source")
         widget.set_overlay(None)
+
+
+    def LoadCamRoi(self):
+        for idx in (0, 1):
+            # Convert as needed:
+            if isinstance(self._roivals[idx], str):
+                roi_tuple = tuple(map(int, self._roivals[idx].strip("()").split(",")))
+            elif isinstance(self._roivals[idx], (list, tuple)):
+                roi_tuple = tuple(int(v) for v in self._roivals[idx])
+            else:
+                roi_tuple = None
+            # Set it on the widget
+            if roi_tuple:
+                widget = getattr(self.ui, f"Cam{idx}Source")
+                widget.set_roi(roi_tuple)
+
 
 # Camera focus controls
     def CamOnFocusButton(self, checked: bool):
@@ -165,7 +184,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._capture_thread[cam_idx] = CaptureThread(widget)
         self._capture_thread[cam_idx].image_captured.connect(self.handleCaptured)
-        self._capture_thread[cam_idx].finished.connect(lambda: lambda: self._capture_thread[cam_idx].deleteLater())
+        self._capture_thread[cam_idx].finished.connect(self._capture_thread[cam_idx].deleteLater())
         self._capture_thread[cam_idx].start()
 
 # Callback from capture_array from camera
@@ -178,12 +197,12 @@ class MainWindow(QtWidgets.QMainWindow):
             case EngineType.AI_MODEL:
                 self._ai_thread[cam_idx] = RunAIThread(frame_array, cam_idx, roi, self._model)
                 self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
-                self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
+                self._ai_thread[cam_idx].finished.connect(self._ai_thread[cam_idx].deleteLater())
                 self._ai_thread[cam_idx].start()
             case EngineType.PYTESSERACT_OCR:
                 self._ocr_thread[cam_idx] = RunOCRThread(frame_array, cam_idx, roi)
                 self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
-                self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
+                self._ocr_thread[cam_idx].finished.connect(self._ocr_thread[cam_idx].deleteLater())
                 self._ocr_thread[cam_idx].start()
 
 
@@ -237,7 +256,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self._capture_thread[idx] = CaptureThread(widget)
             self._capture_thread[idx].image_captured.connect(self.handleCaptured)
-            self._capture_thread[idx].finished.connect(lambda: self._capture_thread[idx].quit())
+            self._capture_thread[idx].finished.connect(self._capture_thread[idx].quit())
             self._capture_thread[idx].start()
 
 
@@ -254,7 +273,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._capture_thread[cam_idx] = CaptureThread(widget)
         self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
-        self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
+        self._capture_thread[cam_idx].finished.connect(self._capture_thread[cam_idx].deleteLater())
         self._capture_thread[cam_idx].start()
 
 
@@ -272,22 +291,10 @@ class MainWindow(QtWidgets.QMainWindow):
             img.save(f"{filename}.png", format="PNG")
 
 
-    def ChangeEngine(self):
-        selected_text = getattr(self.ui, self.sender().objectName()).currentText()
-        for engine in EngineType:
-            if engine.value == selected_text:
-                self._engine = engine
-                break
-
-
-    def ChangeSaveImg(self, idx):
-        self._save_images = getattr(self.ui, self.sender().objectName()).checked()
-
-
     def ExitApplicationHandler(self):
-        self.closeEvent(None)
+        self.close()
 
-
+# Settings dialog, and on close
     def SettingsHandler(self):
         settings = SettingsDialog(self)
         settings.settings_changed.connect(self.ReloadSettings)
@@ -298,10 +305,18 @@ class MainWindow(QtWidgets.QMainWindow):
     def ReloadSettings(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
 
-        self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR)
+        self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True)
         self._is_locked = settings.value("is_locked", True)
         self._password = settings.value("password", "RPICameraComparer")
+
+
+    def SaveSettings(self):
+        settings = QSettings("CMBSolutions", "RpiCameraComparer")
+        for idx in (0, 1):
+            settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+            roi = getattr(self.ui, f"Cam{idx}Source")._roi
+            settings.setValue(f"roi/{idx}", roi)
 
 
     def UnlockHandler(self):
@@ -321,6 +336,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 event.ignore()
                 return
                 
+        self.SaveSettings()
         super().closeEvent(event)
 
 
