@@ -1,6 +1,6 @@
 gpiozero==2.0.1
 numpy==1.26.0
-picamera2==0.3.28
+picamera2==0.3.30
 Pillow==11.3.0
 PySide6==6.8.0.2
 PySide6_Addons==6.8.0.2

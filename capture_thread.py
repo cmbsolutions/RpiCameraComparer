@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtCore import QThread, Signal
 
 
 class CaptureThread(QThread):

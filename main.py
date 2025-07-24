@@ -70,6 +70,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gpiooutput.on()
         self.gpiotrigger.when_pressed = self.handle_gpiotrigger
 
+        #self.setWindowFlags(Qt.FramelessWindowHint)
+        self.showFullScreen()
+
         QtCore.QTimer.singleShot(100, self._insert_cameras)
     
 
