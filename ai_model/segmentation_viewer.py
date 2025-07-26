@@ -4,9 +4,9 @@ from pathlib import Path
 
 # load one example ROI (replace with your live-grabs or a saved frame)
 BASE = Path(__file__).parent.resolve()
-IN_DIR = BASE / "../Test"
+IN_DIR = BASE / "../Captures"
 print(f"Using output directory: {IN_DIR}")
-img_color = cv2.imread(str(IN_DIR / "55572x.png"))
+img_color = cv2.imread(str(IN_DIR / "0_33610_0000.png"))
 gray      = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
 
 def nothing(x): pass
