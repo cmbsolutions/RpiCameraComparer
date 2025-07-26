@@ -22,6 +22,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.ui.comboBoxEngine.setCurrentText(settings.value("engine", EngineType.PYTESSERACT_OCR.value))
         self.ui.checkBoxSaveImages.setChecked(settings.value("saveimages", True, type=bool))
         self.ui.checkBoxClosing.setChecked(settings.value("is_locked", True, type=bool))
+        self.ui.checkBoxPlayAudio.setChecked(settings.value("audio", True, type=bool))
         self.ui.lineEditPassword.setText(settings.value("password", "RPICameraComparer"))
 
         self._old_password = settings.value("password", "RPICameraComparer")
@@ -35,6 +36,7 @@ class SettingsDialog(QtWidgets.QDialog):
         settings.setValue("saveimages", self.ui.checkBoxSaveImages.isChecked())
         settings.setValue("is_locked", self.ui.checkBoxClosing.isChecked())
         settings.setValue("password", self.ui.lineEditPassword.text())
+        settings.setValue("audio", self.ui.checkBoxPlayAudio.isChecked())
         self.settings_changed.emit()
         super().accept()
     

@@ -263,7 +263,7 @@ class Ui_MainWindow(object):
         self.bTriggerManual.raise_()
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
-        self.menuBar.setGeometry(QRect(0, 0, 1920, 19))
+        self.menuBar.setGeometry(QRect(0, 0, 1920, 27))
         self.menuFile = QMenu(self.menuBar)
         self.menuFile.setObjectName(u"menuFile")
         MainWindow.setMenuBar(self.menuBar)

@@ -72,11 +72,22 @@ class Ui_DialogSettings(object):
 
         self.formLayout.setWidget(2, QFormLayout.FieldRole, self.checkBoxSaveImages)
 
+        self.checkBoxPlayAudio = QCheckBox(self.formLayoutWidget)
+        self.checkBoxPlayAudio.setObjectName(u"checkBoxPlayAudio")
+
+        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.checkBoxPlayAudio)
+
+        self.label_5 = QLabel(self.formLayoutWidget)
+        self.label_5.setObjectName(u"label_5")
+        self.label_5.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout.setWidget(3, QFormLayout.LabelRole, self.label_5)
+
         self.label_4 = QLabel(self.formLayoutWidget)
         self.label_4.setObjectName(u"label_4")
         self.label_4.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
 
-        self.formLayout.setWidget(3, QFormLayout.LabelRole, self.label_4)
+        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.label_4)
 
         self.lineEditPassword = QLineEdit(self.formLayoutWidget)
         self.lineEditPassword.setObjectName(u"lineEditPassword")
@@ -85,7 +96,7 @@ class Ui_DialogSettings(object):
         self.lineEditPassword.setCursorMoveStyle(Qt.CursorMoveStyle.LogicalMoveStyle)
         self.lineEditPassword.setClearButtonEnabled(False)
 
-        self.formLayout.setWidget(3, QFormLayout.FieldRole, self.lineEditPassword)
+        self.formLayout.setWidget(4, QFormLayout.FieldRole, self.lineEditPassword)
 
 
         self.retranslateUi(DialogSettings)
@@ -105,6 +116,8 @@ class Ui_DialogSettings(object):
         self.checkBoxClosing.setText("")
         self.label_3.setText(QCoreApplication.translate("DialogSettings", u"Save images", None))
         self.checkBoxSaveImages.setText("")
+        self.checkBoxPlayAudio.setText("")
+        self.label_5.setText(QCoreApplication.translate("DialogSettings", u"Play audio", None))
         self.label_4.setText(QCoreApplication.translate("DialogSettings", u"Unlock password :", None))
         self.lineEditPassword.setText(QCoreApplication.translate("DialogSettings", u"password", None))
     # retranslateUi

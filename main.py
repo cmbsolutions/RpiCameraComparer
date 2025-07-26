@@ -3,9 +3,10 @@ import re
 import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtCore import QSettings, Signal, Qt
+from PySide6.QtCore import QSettings, Signal, Qt, QUrl
 from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QDialog
 from PySide6.QtGui import QIcon
+from PySide6.QtMultimedia import QSoundEffect
 from qglpicamera2_wrapper import QGlPicamera2
 from mainWindow import Ui_MainWindow
 from functools import partial
@@ -58,6 +59,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self._save_images = settings.value("saveimages", True, type=bool)
         self._is_locked = settings.value("is_locked", True, type=bool)
         self._password = settings.value("password", "RPICameraComparer")
+        self._audio = settings.value("audio", True, type=bool)
+
+        self._alarmsound = QSoundEffect()
+        self._alarmsound.setSource(QUrl.fromLocalFile("alarm.wav"))
+        self._alarmsound.setLoopCount(1)
+        self._alarmsound.setVolume(1)
 
          # This is the AI model
         self._model = tf.keras.models.load_model("ai_model/digit_cnn_model6.keras")
@@ -70,7 +77,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gpiooutput.on()
         self.gpiotrigger.when_pressed = self.handle_gpiotrigger
 
-        #self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setWindowFlags(Qt.FramelessWindowHint)
         self.showFullScreen()
 
         QtCore.QTimer.singleShot(100, self._insert_cameras)
@@ -178,6 +185,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._lens_pos[cam_idx] = pos
         getattr(self.ui, f"Cam{cam_idx}Source").picam2.set_controls({"LensPosition": pos})
 
+
  # Capture controls   
     def TestCam(self, checked: bool):
         cam_idx = int(self.sender().objectName()[3])
@@ -187,8 +195,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._capture_thread[cam_idx] = CaptureThread(widget)
         self._capture_thread[cam_idx].image_captured.connect(self.handleCaptured)
-        self._capture_thread[cam_idx].finished.connect(self._capture_thread[cam_idx].deleteLater())
+        self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
         self._capture_thread[cam_idx].start()
+
 
 # Callback from capture_array from camera
     def handleCaptured(self, frame_array, cam_idx):
@@ -197,15 +206,15 @@ class MainWindow(QtWidgets.QMainWindow):
         roi = getattr(self.ui, f"Cam{cam_idx}Source")._roi
 
         match self._engine:
-            case EngineType.AI_MODEL:
+            case EngineType.AI_MODEL.value:
                 self._ai_thread[cam_idx] = RunAIThread(frame_array, cam_idx, roi, self._model)
                 self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
-                self._ai_thread[cam_idx].finished.connect(self._ai_thread[cam_idx].deleteLater())
+                self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
                 self._ai_thread[cam_idx].start()
-            case EngineType.PYTESSERACT_OCR:
+            case EngineType.PYTESSERACT_OCR.value:
                 self._ocr_thread[cam_idx] = RunOCRThread(frame_array, cam_idx, roi)
                 self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
-                self._ocr_thread[cam_idx].finished.connect(self._ocr_thread[cam_idx].deleteLater())
+                self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
                 self._ocr_thread[cam_idx].start()
 
 
@@ -226,6 +235,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
                 getattr(self.ui, "Frame_Error").show()
                 getattr(self.ui, "ResetError").setEnabled(True)
+                if self._audio:
+                    self._alarmsound.play()
+
             else:
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
                 getattr(self.ui, "Frame_Error").show()
@@ -259,7 +271,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self._capture_thread[idx] = CaptureThread(widget)
             self._capture_thread[idx].image_captured.connect(self.handleCaptured)
-            self._capture_thread[idx].finished.connect(self._capture_thread[idx].quit())
+            self._capture_thread[idx].finished.connect(lambda: self._capture_thread[idx].quit())
             self._capture_thread[idx].start()
 
 
@@ -276,7 +288,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._capture_thread[cam_idx] = CaptureThread(widget)
         self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
-        self._capture_thread[cam_idx].finished.connect(self._capture_thread[cam_idx].deleteLater())
+        self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
         self._capture_thread[cam_idx].start()
 
 
@@ -312,6 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._save_images = settings.value("saveimages", True)
         self._is_locked = settings.value("is_locked", True)
         self._password = settings.value("password", "RPICameraComparer")
+        self._audio = settings.value("audio", True, type=bool)
 
 
     def SaveSettings(self):
