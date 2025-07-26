@@ -56,6 +56,10 @@ class QGlPicamera2(QGlPicamera2):
         super().mouseReleaseEvent(ev)
 
 
+    def GetRoi(self):
+        return self._roi
+
+
     def set_roi(self, roi_rect=None):
         fw, fh = self._frame_size.width(), self._frame_size.height()
         ww, wh = self.width(), self.height()

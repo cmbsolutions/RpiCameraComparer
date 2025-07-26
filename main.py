@@ -14,6 +14,7 @@ from libcamera import controls
 from capture_thread import CaptureThread
 from run_ocr_thread import RunOCRThread
 from run_ai_thread import RunAIThread
+from run_image_thread import RunImageThread
 from PIL import Image
 from segment_digits import ai_helper
 import tensorflow as tf
@@ -51,6 +52,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._capture_thread = {}
         self._ocr_thread = {}
         self._ai_thread = {}
+        self._image_thread = {}
         self._capturing = False
         self._captured_digits = {}
         self._captured = 0
@@ -60,7 +62,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._is_locked = settings.value("is_locked", True, type=bool)
         self._password = settings.value("password", "RPICameraComparer")
         self._audio = settings.value("audio", True, type=bool)
-
+        self._fullscreen = settings.value("fullscreen", True, type=bool)
+        
         self._alarmsound = QSoundEffect()
         self._alarmsound.setSource(QUrl.fromLocalFile("alarm.wav"))
         self._alarmsound.setLoopCount(1)
@@ -77,8 +80,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gpiooutput.on()
         self.gpiotrigger.when_pressed = self.handle_gpiotrigger
 
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.showFullScreen()
+        if self._fullscreen:
+            self.setWindowFlags(Qt.FramelessWindowHint)
+            self.showFullScreen()
 
         QtCore.QTimer.singleShot(100, self._insert_cameras)
     
@@ -191,12 +195,19 @@ class MainWindow(QtWidgets.QMainWindow):
         cam_idx = int(self.sender().objectName()[3])
         self._captured = 0
 
-        widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
+        widget = getattr(self.ui, f"Cam{cam_idx}Source")
 
-        self._capture_thread[cam_idx] = CaptureThread(widget)
-        self._capture_thread[cam_idx].image_captured.connect(self.handleCaptured)
-        self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
-        self._capture_thread[cam_idx].start()
+        match self._engine:
+            case EngineType.AI_MODEL.value:
+                self._ai_thread[cam_idx] = RunAIThread(widget)
+                self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
+                self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
+                self._ai_thread[cam_idx].start()
+            case EngineType.PYTESSERACT_OCR.value:
+                self._ocr_thread[cam_idx] = RunOCRThread(widget)
+                self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
+                self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
+                self._ocr_thread[cam_idx].start()
 
 
 # Callback from capture_array from camera
@@ -224,10 +235,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self._captured_digits[cam_idx] = digits
             self._captured += 1
 
-        if self._save_images:
-            img = Image.fromarray(rgb)
-            img.save(IMG_DIR / f"{digits}.png", format="PNG")
-
         if self._captured >= 2:
             if self._captured_digits[0] != self._captured_digits[1]:
                 self.gpiooutput.off()
@@ -241,6 +248,11 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
                 getattr(self.ui, "Frame_Error").show()
+
+        if self._save_images:
+            self._image_thread[cam_idx] = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
+            self._image_thread[cam_idx].finished.connect(lambda: self._image_thread[cam_idx].quit())
+            self._image_thread[cam_idx].start()
 
 
     def handle_gpiotrigger(self):
@@ -266,13 +278,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def CompareImages(self):
-        for idx in (0, 1):
-            widget = getattr(self.ui, f"Cam{idx}Source").picam2
+        for cam_idx in (0, 1):
+            widget = getattr(self.ui, f"Cam{cam_idx}Source")
 
-            self._capture_thread[idx] = CaptureThread(widget)
-            self._capture_thread[idx].image_captured.connect(self.handleCaptured)
-            self._capture_thread[idx].finished.connect(lambda: self._capture_thread[idx].quit())
-            self._capture_thread[idx].start()
+            match self._engine:
+                case EngineType.AI_MODEL.value:
+                    self._ai_thread[cam_idx] = RunAIThread(widget)
+                    self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
+                    self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].quit())
+                    self._ai_thread[cam_idx].start()
+                case EngineType.PYTESSERACT_OCR.value:
+                    self._ocr_thread[cam_idx] = RunOCRThread(widget)
+                    self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
+                    self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].quit())
+                    self._ocr_thread[cam_idx].start()
 
 
     def ResetError(self):
@@ -309,6 +328,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def ExitApplicationHandler(self):
         self.close()
 
+
 # Settings dialog, and on close
     def SettingsHandler(self):
         settings = SettingsDialog(self)
@@ -331,7 +351,7 @@ class MainWindow(QtWidgets.QMainWindow):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
         for idx in (0, 1):
             settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
-            roi = getattr(self.ui, f"Cam{idx}Source")._roi
+            roi = getattr(self.ui, f"Cam{idx}Source").GetRoi()
             settings.setValue(f"roi/{idx}", roi)
 
 

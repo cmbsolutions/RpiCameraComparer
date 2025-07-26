@@ -83,12 +83,6 @@ class Ui_DialogSettings(object):
 
         self.formLayout.setWidget(3, QFormLayout.LabelRole, self.label_5)
 
-        self.label_4 = QLabel(self.formLayoutWidget)
-        self.label_4.setObjectName(u"label_4")
-        self.label_4.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-
-        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.label_4)
-
         self.lineEditPassword = QLineEdit(self.formLayoutWidget)
         self.lineEditPassword.setObjectName(u"lineEditPassword")
         self.lineEditPassword.setMaxLength(25)
@@ -97,6 +91,23 @@ class Ui_DialogSettings(object):
         self.lineEditPassword.setClearButtonEnabled(False)
 
         self.formLayout.setWidget(4, QFormLayout.FieldRole, self.lineEditPassword)
+
+        self.label_4 = QLabel(self.formLayoutWidget)
+        self.label_4.setObjectName(u"label_4")
+        self.label_4.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+
+        self.formLayout.setWidget(4, QFormLayout.LabelRole, self.label_4)
+
+        self.label_6 = QLabel(self.formLayoutWidget)
+        self.label_6.setObjectName(u"label_6")
+
+        self.formLayout.setWidget(5, QFormLayout.LabelRole, self.label_6)
+
+        self.checkBoxFullScreen = QCheckBox(self.formLayoutWidget)
+        self.checkBoxFullScreen.setObjectName(u"checkBoxFullScreen")
+        self.checkBoxFullScreen.setChecked(True)
+
+        self.formLayout.setWidget(5, QFormLayout.FieldRole, self.checkBoxFullScreen)
 
 
         self.retranslateUi(DialogSettings)
@@ -118,7 +129,9 @@ class Ui_DialogSettings(object):
         self.checkBoxSaveImages.setText("")
         self.checkBoxPlayAudio.setText("")
         self.label_5.setText(QCoreApplication.translate("DialogSettings", u"Play audio", None))
-        self.label_4.setText(QCoreApplication.translate("DialogSettings", u"Unlock password :", None))
         self.lineEditPassword.setText(QCoreApplication.translate("DialogSettings", u"password", None))
+        self.label_4.setText(QCoreApplication.translate("DialogSettings", u"Unlock password :", None))
+        self.label_6.setText(QCoreApplication.translate("DialogSettings", u"Full screen", None))
+        self.checkBoxFullScreen.setText("")
     # retranslateUi
 
