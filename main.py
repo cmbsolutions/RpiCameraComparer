@@ -237,14 +237,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self._captured >= 2:
             if self._captured_digits[0] != self._captured_digits[1]:
-                self.gpiooutput.off()
-                self._halt = True
-                getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
-                getattr(self.ui, "Frame_Error").show()
-                getattr(self.ui, "ResetError").setEnabled(True)
-                if self._audio:
-                    self._alarmsound.play()
-
+                self.onDigitsNotMatching()
             else:
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
                 getattr(self.ui, "Frame_Error").show()
@@ -253,6 +246,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self._image_thread[cam_idx] = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
             self._image_thread[cam_idx].finished.connect(lambda: self._image_thread[cam_idx].quit())
             self._image_thread[cam_idx].start()
+
+
+    def onDigitsNotMatching(self):
+        self.gpiooutput.off()
+        self._halt = True
+        getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
+        getattr(self.ui, "Frame_Error").show()
+        getattr(self.ui, "ResetError").setEnabled(True)
+        self.ui.bTriggerManual.setEnabled(False)
+        self.ui.Cam0TestCapture.setEnabled(False)
+        self.ui.Cam1TestCapture.setEnabled(False)
+        
+        if self._audio:
+            self._alarmsound.play()
 
 
     def handle_gpiotrigger(self):
@@ -295,10 +302,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def ResetError(self):
-        getattr(self.ui, f"Frame_Error").hide()
-        getattr(self.ui, f"ResetError").setEnabled(False)
-        self._halt = False
         self.gpiooutput.on()
+        self._halt = False
+        getattr(self.ui, "Frame_Error").hide()
+        getattr(self.ui, "ResetError").setEnabled(False)
+        self.ui.bTriggerManual.setEnabled(True)
+        self.ui.Cam0TestCapture.setEnabled(True)
+        self.ui.Cam1TestCapture.setEnabled(True)
 
     
     def SaveFileDialog(self):
