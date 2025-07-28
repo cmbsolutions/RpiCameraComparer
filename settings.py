@@ -24,6 +24,7 @@ class SettingsDialog(QtWidgets.QDialog):
         self.ui.checkBoxClosing.setChecked(settings.value("is_locked", True, type=bool))
         self.ui.checkBoxPlayAudio.setChecked(settings.value("audio", True, type=bool))
         self.ui.lineEditPassword.setText(settings.value("password", "RPICameraComparer"))
+        self.ui.checkBoxFullScreen.setChecked(settings.value("fullscreen", True, type=bool))
 
         self._old_password = settings.value("password", "RPICameraComparer")
         self.ui.buttonBox.accepted.connect(self.accept)
@@ -37,6 +38,7 @@ class SettingsDialog(QtWidgets.QDialog):
         settings.setValue("is_locked", self.ui.checkBoxClosing.isChecked())
         settings.setValue("password", self.ui.lineEditPassword.text())
         settings.setValue("audio", self.ui.checkBoxPlayAudio.isChecked())
+        settings.setValue("fullscreen", self.ui.checkBoxFullScreen.isChecked())
         self.settings_changed.emit()
         super().accept()
     

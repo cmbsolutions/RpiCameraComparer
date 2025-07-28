@@ -22,6 +22,7 @@ from enumerations import EngineType
 from pathlib import Path
 from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
+import subprocess
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
@@ -339,12 +340,34 @@ class MainWindow(QtWidgets.QMainWindow):
         self.close()
 
 
+    def RebootHandler(self):
+        if self._is_locked:
+            ok = self.ask_for_password(subject="Reboot")
+            if ok:
+                self.SaveSettings()
+                self.gpiooutput.off()
+                self.gpiotrigger.close()
+                subprocess.run(["sudo", "reboot", "--reboot"])
+
+
+    def ShutdownHandler(self):
+        if self._is_locked:
+            ok = self.ask_for_password(subject="Shutdown")
+            if ok:
+                self.SaveSettings()
+                self.gpiooutput.off()
+                self.gpiotrigger.close()
+                subprocess.run(["sudo", "shutdown", "-h", "now"])
+
+
 # Settings dialog, and on close
     def SettingsHandler(self):
-        settings = SettingsDialog(self)
-        settings.settings_changed.connect(self.ReloadSettings)
-    
-        result = settings.exec()
+        if self._is_locked:
+            ok = self.ask_for_password(subject="Modify settings")
+            if ok:
+                settings = SettingsDialog(self)
+                settings.settings_changed.connect(self.ReloadSettings)
+                result = settings.exec()
 
 
     def ReloadSettings(self):
@@ -370,14 +393,14 @@ class MainWindow(QtWidgets.QMainWindow):
         return ok and (password == self._password)
 
 
-    def ask_for_password(self):
-        password, ok = QInputDialog.getText(self, "Exit", "Enter password to close:", QLineEdit.Password)
+    def ask_for_password(self, subject="Exit"):
+        password, ok = QInputDialog.getText(self, subject, "Please enter the password.", QLineEdit.Password)
         return ok and (password == self._password)
     
 
     def closeEvent(self, event):
         if self._is_locked:
-            ok = self.ask_for_password()
+            ok = self.ask_for_password(subject="Exit Application")
             if not ok:
                 event.ignore()
                 return
@@ -388,7 +411,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def keyPressEvent(self, event):
         if self._is_locked:
-            if event.key() in (Qt.Key_Escape, Qt.Key_F4):
+            if event.key() in (Qt.Key_Escape, Qt.Key_F4, Qt.Key_Alt + Qt.Key_Tab):
                 pass  # ignore
             else:
                 super().keyPressEvent(event)

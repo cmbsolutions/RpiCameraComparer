@@ -635,9 +635,18 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionExit_application"/>
+    <widget class="QMenu" name="menuSystem">
+     <property name="title">
+      <string>System</string>
+     </property>
+     <addaction name="actionRebootSystem"/>
+     <addaction name="actionShutdownSystem"/>
+    </widget>
     <addaction name="actionSettings"/>
     <addaction name="actionUnlock_application"/>
+    <addaction name="menuSystem"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit_application"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -654,13 +663,39 @@
    </property>
   </action>
   <action name="actionSettings">
+   <property name="icon">
+    <iconset resource="Resources/icons.qrc">
+     <normaloff>:/main/system-run.png</normaloff>:/main/system-run.png</iconset>
+   </property>
    <property name="text">
     <string>Settings</string>
    </property>
   </action>
   <action name="actionUnlock_application">
+   <property name="icon">
+    <iconset resource="Resources/icons.qrc">
+     <normaloff>:/main/system-lock-screen.png</normaloff>:/main/system-lock-screen.png</iconset>
+   </property>
    <property name="text">
     <string>Unlock application</string>
+   </property>
+  </action>
+  <action name="actionRebootSystem">
+   <property name="icon">
+    <iconset resource="Resources/icons.qrc">
+     <normaloff>:/main/gnome-session-reboot.png</normaloff>:/main/gnome-session-reboot.png</iconset>
+   </property>
+   <property name="text">
+    <string>Reboot system</string>
+   </property>
+  </action>
+  <action name="actionShutdownSystem">
+   <property name="icon">
+    <iconset resource="Resources/icons.qrc">
+     <normaloff>:/main/gnome-session-halt.png</normaloff>:/main/gnome-session-halt.png</iconset>
+   </property>
+   <property name="text">
+    <string>Shutdown system</string>
    </property>
   </action>
  </widget>
@@ -676,7 +711,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>255</x>
-     <y>630</y>
+     <y>727</y>
     </hint>
     <hint type="destinationlabel">
      <x>159</x>
@@ -692,7 +727,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>365</x>
-     <y>628</y>
+     <y>727</y>
     </hint>
     <hint type="destinationlabel">
      <x>156</x>
@@ -707,8 +742,8 @@
    <slot>CamOnFocusButton()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>11</x>
-     <y>580</y>
+     <x>170</x>
+     <y>667</y>
     </hint>
     <hint type="destinationlabel">
      <x>32</x>
@@ -723,8 +758,8 @@
    <slot>CamOnFocusButton()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>640</x>
-     <y>578</y>
+     <x>770</x>
+     <y>667</y>
     </hint>
     <hint type="destinationlabel">
      <x>111</x>
@@ -739,8 +774,8 @@
    <slot>CamOnFocusButton()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1300</x>
-     <y>578</y>
+     <x>1710</x>
+     <y>667</y>
     </hint>
     <hint type="destinationlabel">
      <x>367</x>
@@ -755,8 +790,8 @@
    <slot>CamOnFocusButton()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>690</x>
-     <y>578</y>
+     <x>1110</x>
+     <y>667</y>
     </hint>
     <hint type="destinationlabel">
      <x>428</x>
@@ -771,8 +806,8 @@
    <slot>ResetCamRoi()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>705</x>
-     <y>628</y>
+     <x>1110</x>
+     <y>727</y>
     </hint>
     <hint type="destinationlabel">
      <x>665</x>
@@ -787,8 +822,8 @@
    <slot>TestCam()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>790</x>
-     <y>628</y>
+     <x>1290</x>
+     <y>727</y>
     </hint>
     <hint type="destinationlabel">
      <x>655</x>
@@ -804,7 +839,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>328</x>
-     <y>587</y>
+     <y>667</y>
     </hint>
     <hint type="destinationlabel">
      <x>250</x>
@@ -819,8 +854,8 @@
    <slot>CamOnFocusSlider()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>967</x>
-     <y>592</y>
+     <x>1160</x>
+     <y>667</y>
     </hint>
     <hint type="destinationlabel">
      <x>825</x>
@@ -835,8 +870,8 @@
    <slot>StartCapturing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>484</x>
-     <y>663</y>
+     <x>580</x>
+     <y>957</y>
     </hint>
     <hint type="destinationlabel">
      <x>333</x>
@@ -851,8 +886,8 @@
    <slot>ResetError()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>754</x>
-     <y>668</y>
+     <x>970</x>
+     <y>957</y>
     </hint>
     <hint type="destinationlabel">
      <x>793</x>
@@ -867,8 +902,8 @@
    <slot>SaveFileDialog()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>449</x>
-     <y>630</y>
+     <x>520</x>
+     <y>727</y>
     </hint>
     <hint type="destinationlabel">
      <x>187</x>
@@ -883,8 +918,8 @@
    <slot>handle_gpiotrigger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1011</x>
-     <y>661</y>
+     <x>1620</x>
+     <y>957</y>
     </hint>
     <hint type="destinationlabel">
      <x>869</x>
@@ -940,6 +975,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionRebootSystem</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>RebootHandler()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>959</x>
+     <y>539</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionShutdownSystem</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>ShutdownHandler()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>959</x>
+     <y>539</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>ResetCamRoi()</slot>
@@ -955,5 +1022,7 @@
   <slot>ExitApplicationHandler()</slot>
   <slot>SettingsHandler()</slot>
   <slot>UnlockHandler()</slot>
+  <slot>RebootHandler()</slot>
+  <slot>ShutdownHandler()</slot>
  </slots>
 </ui>
