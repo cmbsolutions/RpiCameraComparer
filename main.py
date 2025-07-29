@@ -60,8 +60,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._halt = False
         self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True, type=bool)
-        self._is_locked = settings.value("is_locked", True, type=bool)
-        self._password = settings.value("password", "RPICameraComparer")
+        self._is_locked = settings.value("is_locked", False, type=bool)
+        self._password = settings.value("password", "changeme", type=str)
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
         
@@ -368,7 +368,11 @@ class MainWindow(QtWidgets.QMainWindow):
                 settings = SettingsDialog(self)
                 settings.settings_changed.connect(self.ReloadSettings)
                 result = settings.exec()
-
+        else:
+            settings = SettingsDialog(self)
+            settings.settings_changed.connect(self.ReloadSettings)
+            result = settings.exec()
+            
 
     def ReloadSettings(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
@@ -383,7 +387,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def SaveSettings(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
         for idx in (0, 1):
-            settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+            if self._focus_supported[idx]:
+                settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+            else:
+                settings.setValue(f"lensposition/{idx}", 0.0)
             roi = getattr(self.ui, f"Cam{idx}Source").GetRoi()
             settings.setValue(f"roi/{idx}", roi)
 
