@@ -22,6 +22,7 @@ from enumerations import EngineType
 from pathlib import Path
 from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
+import subprocess
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
@@ -59,8 +60,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self._halt = False
         self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True, type=bool)
-        self._is_locked = settings.value("is_locked", True, type=bool)
-        self._password = settings.value("password", "RPICameraComparer")
+        self._is_locked = settings.value("is_locked", False, type=bool)
+        self._password = settings.value("password", "changeme", type=str)
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
         
@@ -237,14 +238,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if self._captured >= 2:
             if self._captured_digits[0] != self._captured_digits[1]:
-                self.gpiooutput.off()
-                self._halt = True
-                getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
-                getattr(self.ui, "Frame_Error").show()
-                getattr(self.ui, "ResetError").setEnabled(True)
-                if self._audio:
-                    self._alarmsound.play()
-
+                self.onDigitsNotMatching()
             else:
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
                 getattr(self.ui, "Frame_Error").show()
@@ -253,6 +247,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self._image_thread[cam_idx] = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
             self._image_thread[cam_idx].finished.connect(lambda: self._image_thread[cam_idx].quit())
             self._image_thread[cam_idx].start()
+
+
+    def onDigitsNotMatching(self):
+        self.gpiooutput.off()
+        self._halt = True
+        getattr(self.ui, "Frame_Error").setStyleSheet("color: red;")
+        getattr(self.ui, "Frame_Error").show()
+        getattr(self.ui, "ResetError").setEnabled(True)
+        self.ui.bTriggerManual.setEnabled(False)
+        self.ui.Cam0TestCapture.setEnabled(False)
+        self.ui.Cam1TestCapture.setEnabled(False)
+        
+        if self._audio:
+            self._alarmsound.play()
 
 
     def handle_gpiotrigger(self):
@@ -295,10 +303,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def ResetError(self):
-        getattr(self.ui, f"Frame_Error").hide()
-        getattr(self.ui, f"ResetError").setEnabled(False)
-        self._halt = False
         self.gpiooutput.on()
+        self._halt = False
+        getattr(self.ui, "Frame_Error").hide()
+        getattr(self.ui, "ResetError").setEnabled(False)
+        self.ui.bTriggerManual.setEnabled(True)
+        self.ui.Cam0TestCapture.setEnabled(True)
+        self.ui.Cam1TestCapture.setEnabled(True)
 
     
     def SaveFileDialog(self):
@@ -329,13 +340,39 @@ class MainWindow(QtWidgets.QMainWindow):
         self.close()
 
 
+    def RebootHandler(self):
+        if self._is_locked:
+            ok = self.ask_for_password(subject="Reboot")
+            if ok:
+                self.SaveSettings()
+                self.gpiooutput.off()
+                self.gpiotrigger.close()
+                subprocess.run(["sudo", "reboot", "--reboot"])
+
+
+    def ShutdownHandler(self):
+        if self._is_locked:
+            ok = self.ask_for_password(subject="Shutdown")
+            if ok:
+                self.SaveSettings()
+                self.gpiooutput.off()
+                self.gpiotrigger.close()
+                subprocess.run(["sudo", "shutdown", "-h", "now"])
+
+
 # Settings dialog, and on close
     def SettingsHandler(self):
-        settings = SettingsDialog(self)
-        settings.settings_changed.connect(self.ReloadSettings)
-    
-        result = settings.exec()
-
+        if self._is_locked:
+            ok = self.ask_for_password(subject="Modify settings")
+            if ok:
+                settings = SettingsDialog(self)
+                settings.settings_changed.connect(self.ReloadSettings)
+                result = settings.exec()
+        else:
+            settings = SettingsDialog(self)
+            settings.settings_changed.connect(self.ReloadSettings)
+            result = settings.exec()
+            
 
     def ReloadSettings(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
@@ -350,7 +387,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def SaveSettings(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
         for idx in (0, 1):
-            settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+            if self._focus_supported[idx]:
+                settings.setValue(f"lensposition/{idx}", self._lens_pos[idx])
+            else:
+                settings.setValue(f"lensposition/{idx}", 0.0)
             roi = getattr(self.ui, f"Cam{idx}Source").GetRoi()
             settings.setValue(f"roi/{idx}", roi)
 
@@ -360,14 +400,14 @@ class MainWindow(QtWidgets.QMainWindow):
         return ok and (password == self._password)
 
 
-    def ask_for_password(self):
-        password, ok = QInputDialog.getText(self, "Exit", "Enter password to close:", QLineEdit.Password)
+    def ask_for_password(self, subject="Exit"):
+        password, ok = QInputDialog.getText(self, subject, "Please enter the password.", QLineEdit.Password)
         return ok and (password == self._password)
     
 
     def closeEvent(self, event):
         if self._is_locked:
-            ok = self.ask_for_password()
+            ok = self.ask_for_password(subject="Exit Application")
             if not ok:
                 event.ignore()
                 return
@@ -378,7 +418,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def keyPressEvent(self, event):
         if self._is_locked:
-            if event.key() in (Qt.Key_Escape, Qt.Key_F4):
+            if event.key() in (Qt.Key_Escape, Qt.Key_F4, Qt.Key_Alt + Qt.Key_Tab):
                 pass  # ignore
             else:
                 super().keyPressEvent(event)

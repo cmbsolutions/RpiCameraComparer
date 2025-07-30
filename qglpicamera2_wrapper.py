@@ -29,6 +29,7 @@ class QGlPicamera2(QGlPicamera2):
         self._origin = QPoint()
 
         self._frame_size = QSize(width, height)
+        self._roi = None
 
 
     def mousePressEvent(self, ev):

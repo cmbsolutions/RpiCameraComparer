@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="main">
+    <file>gnome-session-halt.png</file>
+    <file>gnome-session-reboot.png</file>
+    <file>system-lock-screen.png</file>
     <file>camera-video.png</file>
     <file>gtk-media-record.png</file>
     <file>system-run.png</file>
