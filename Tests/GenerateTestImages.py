@@ -7,11 +7,11 @@ import os
 FONT_PATH = "/usr/share/fonts/truetype/msttcorefonts/"  # adjust as needed
 # 1) Figure out where *this* script lives, and make TrainingSet there
 BASE = Path(__file__).parent.resolve()
-OUT_DIR = BASE / "img2"
+OUT_DIR = BASE / "img3"
 print(f"Using output directory: {OUT_DIR}")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-fontsize=20
+fontsize=24
 
 #for fnt in ("cour", "arial", "times", "verdana"):
 fnt = "arial"
@@ -40,7 +40,7 @@ for i in range(1000):
     )
     
     # optional: rotate a bit
-    angle = np.random.uniform(-5, 5)
+    angle = np.random.uniform(-1, 1)
     img = img.rotate(
         angle,
         resample=Image.BICUBIC,
