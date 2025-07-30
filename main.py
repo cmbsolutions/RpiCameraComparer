@@ -279,10 +279,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self._capturing = False
             getattr(self.ui, "StartCapture").setText("Start capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-play-ltr.png"))
+            self.ui.bStartStopMachine.setEnabled(True)
         else:
             self._capturing = True
             getattr(self.ui, "StartCapture").setText("Stop capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-pause.png"))
+            self.ui.bStartStopMachine.setEnabled(False)
 
 
     def CompareImages(self):
@@ -312,6 +314,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.Cam1TestCapture.setEnabled(True)
 
     
+    def StartStopMachineHandler(self):
+        if self.gpiooutput.value == 1:
+            self.gpiooutput.off()
+            self.ui.bStartStopMachine.setText("Start machine")
+            self.ui.bStartStopMachine.setIcon(QIcon(":/main/forward.png"))
+        else:
+            self.gpiooutput.on()
+            self.ui.bStartStopMachine.setText("Stop machine")
+            self.ui.bStartStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
+
+
     def SaveFileDialog(self):
         cam_idx = int(self.sender().objectName()[3])
         widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
@@ -380,7 +393,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True)
         self._is_locked = settings.value("is_locked", True)
-        self._password = settings.value("password", "RPICameraComparer")
+        self._password = settings.value("password", "changeme")
         self._audio = settings.value("audio", True, type=bool)
 
 

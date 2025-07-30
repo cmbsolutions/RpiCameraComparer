@@ -604,6 +604,32 @@
      </size>
     </property>
    </widget>
+   <widget class="QPushButton" name="bStopMachine">
+    <property name="geometry">
+     <rect>
+      <x>1620</x>
+      <y>820</y>
+      <width>281</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Stop machine</string>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/dialog-cancel.png</normaloff>:/main/dialog-cancel.png</iconset>
+    </property>
+    <property name="checkable">
+     <bool>false</bool>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+    <property name="flat">
+     <bool>false</bool>
+    </property>
+   </widget>
    <zorder>Frame_Error</zorder>
    <zorder>Cam0FocusPlus</zorder>
    <zorder>Cam0FocusMinus</zorder>
@@ -621,6 +647,7 @@
    <zorder>ResetError</zorder>
    <zorder>Cam0SaveCapture</zorder>
    <zorder>bTriggerManual</zorder>
+   <zorder>bStopMachine</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -1007,6 +1034,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>bStopMachine</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>StartStopMachineHandler()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1730</x>
+     <y>888</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1408</x>
+     <y>872</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>ResetCamRoi()</slot>
@@ -1024,5 +1067,6 @@
   <slot>UnlockHandler()</slot>
   <slot>RebootHandler()</slot>
   <slot>ShutdownHandler()</slot>
+  <slot>StartStopMachineHandler()</slot>
  </slots>
 </ui>
