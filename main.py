@@ -315,14 +315,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     
     def StartStopMachineHandler(self):
+        print(f"GPIO output value: {self.gpiooutput.value}")
         if self.gpiooutput.value == 1:
             self.gpiooutput.off()
-            self.ui.bStartStopMachine.setText("Start machine")
-            self.ui.bStartStopMachine.setIcon(QIcon(":/main/forward.png"))
+            self.ui.bStopMachine.setText("Start machine")
+            self.ui.bStopMachine.setIcon(QIcon(":/main/forward.png"))
         else:
             self.gpiooutput.on()
-            self.ui.bStartStopMachine.setText("Stop machine")
-            self.ui.bStartStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
+            self.ui.bStopMachine.setText("Stop machine")
+            self.ui.bStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
 
 
     def SaveFileDialog(self):
