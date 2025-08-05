@@ -14,7 +14,7 @@ class ai_helper:
 
         # 2. Threshold to binary image
         _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
-
+ 
         # 3. Morphological closing to connect broken parts (horizontal bias)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1,1))
         clean  = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel)

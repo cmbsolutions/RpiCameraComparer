@@ -4,7 +4,7 @@ import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import QSettings, Signal, Qt, QUrl
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QDialog
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QMessageBox
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QSoundEffect
 from qglpicamera2_wrapper import QGlPicamera2
@@ -71,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._alarmsound.setVolume(1)
 
          # This is the AI model
-        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model6.keras")
+        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
         
         self.gpio_triggered.connect(self.onGpioTriggered)
 
@@ -200,7 +200,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         match self._engine:
             case EngineType.AI_MODEL.value:
-                self._ai_thread[cam_idx] = RunAIThread(widget)
+                self._ai_thread[cam_idx] = RunAIThread(widget, self._model)
                 self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
                 self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
                 self._ai_thread[cam_idx].start()
@@ -355,23 +355,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def RebootHandler(self):
-        if self._is_locked:
-            ok = self.ask_for_password(subject="Reboot")
-            if ok:
-                self.SaveSettings()
-                self.gpiooutput.off()
-                self.gpiotrigger.close()
-                subprocess.run(["sudo", "reboot", "--reboot"])
+        ok = self.ask_for_password(subject="Reboot")
+        if ok and self.ask_confirmation(action="reboot"):
+            self.SaveSettings()
+            self.gpiooutput.off()
+            self.gpiotrigger.close()
+            subprocess.run(["sudo", "reboot", "--reboot"])
 
 
     def ShutdownHandler(self):
-        if self._is_locked:
-            ok = self.ask_for_password(subject="Shutdown")
-            if ok:
-                self.SaveSettings()
-                self.gpiooutput.off()
-                self.gpiotrigger.close()
-                subprocess.run(["sudo", "shutdown", "-h", "now"])
+        ok = self.ask_for_password(subject="Shutdown")
+        if ok and self.ask_confirmation(action="shutdown"):
+            self.SaveSettings()
+            self.gpiooutput.off()
+            self.gpiotrigger.close()
+            subprocess.run(["sudo", "shutdown", "-h", "now"])
 
 
 # Settings dialog, and on close
@@ -410,14 +408,44 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def UnlockHandler(self):
+        self.show_dialogs(reset=False)
         password, ok = QInputDialog.getText(self, "Unlock", "Enter password to unlock:", QLineEdit.Password)
+        self.show_dialogs(reset=True)
         return ok and (password == self._password)
 
 
     def ask_for_password(self, subject="Exit"):
+        self.show_dialogs(reset=False)
         password, ok = QInputDialog.getText(self, subject, "Please enter the password.", QLineEdit.Password)
+        self.show_dialogs(reset=True)
         return ok and (password == self._password)
     
+
+    def ask_confirmation(self, action="exit"):
+        self.show_dialogs(reset=False)
+        result = QMessageBox.question(
+            self,
+            f"Confirm {action}",
+            f"Are you sure you want to {action}?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        self.show_dialogs(reset=True)
+        return result == QMessageBox.Yes
+    
+
+    def show_dialogs(self, reset=False):
+        if not reset:
+            if self._fullscreen:
+                # Temporarily restore window borders to allow modal dialog
+                self.setWindowFlags(Qt.Window)
+                self.showNormal()  # Exit fullscreen so the dialog can show
+                self.activateWindow()  # Bring window to front
+        else:
+            if self._fullscreen:
+                # Restore fullscreen frameless mode
+                self.setWindowFlags(Qt.FramelessWindowHint)
+                self.showFullScreen()
+
 
     def closeEvent(self, event):
         if self._is_locked:

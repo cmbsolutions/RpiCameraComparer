@@ -90,6 +90,7 @@ class MainWindow(QtWidgets.QMainWindow):
         x_offset = (size - w) // 2
         canvas[y_offset:y_offset + h, x_offset:x_offset + w] = img
         return canvas
+    
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

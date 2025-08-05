@@ -4,6 +4,7 @@ import tensorflow as tf
 from PIL import Image
 import cv2
 from qglpicamera2_wrapper import QGlPicamera2
+import numpy as np
 
 class RunAIThread(QThread):
     finished = Signal()
@@ -25,6 +26,7 @@ class RunAIThread(QThread):
         digits = []
         for _, _, digit_img in segments:
             # resize to your CNN�s input size (64�64), normalize, etc.
+            digit_img = self.center_and_pad(digit_img)
             d = cv2.resize(digit_img, (64,64), interpolation=cv2.INTER_CUBIC)
             d = d.reshape(1,64,64,1)/255.0
             pred = self._model.predict(d)
@@ -37,3 +39,12 @@ class RunAIThread(QThread):
         self.ai_captured_result.emit(rgb, self._picam2.picam2.camera_idx, result)
         print(f"AI Cam{self._picam2.picam2.camera_idx} finished")
         self.finished.emit()
+
+
+    def center_and_pad(self, img, size=64):
+        h, w = img.shape
+        canvas = np.full((size, size), 255, dtype=np.uint8)  # white background
+        y_offset = (size - h) // 2
+        x_offset = (size - w) // 2
+        canvas[y_offset:y_offset + h, x_offset:x_offset + w] = img
+        return canvas
