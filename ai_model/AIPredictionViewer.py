@@ -56,6 +56,7 @@ class MainWindow(QtWidgets.QMainWindow):
         digits = []
         idx = 0
         for _, _, digit_img in segments:
+            digit_img = self.center_and_pad(digit_img)
             pixmap = self.numpy_to_pixmap(digit_img)
             scene = QGraphicsScene()
             item = QGraphicsPixmapItem(pixmap)
@@ -80,7 +81,15 @@ class MainWindow(QtWidgets.QMainWindow):
         bytes_per_line = width
         qimage = QImage(img.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
         return QPixmap.fromImage(qimage)
-    
+
+
+    def center_and_pad(self, img, size=64):
+        h, w = img.shape
+        canvas = np.full((size, size), 255, dtype=np.uint8)  # white background
+        y_offset = (size - h) // 2
+        x_offset = (size - w) // 2
+        canvas[y_offset:y_offset + h, x_offset:x_offset + w] = img
+        return canvas
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

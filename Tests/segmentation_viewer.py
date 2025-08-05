@@ -6,7 +6,7 @@ from pathlib import Path
 BASE = Path(__file__).parent.resolve()
 IN_DIR = BASE / "img3"
 print(f"Using input directory: {IN_DIR}")
-img_color = cv2.imread(str(IN_DIR / "00530_0208.png"))
+img_color = cv2.imread(str(IN_DIR / "00278_0239.png"))
 gray      = cv2.cvtColor(img_color, cv2.COLOR_BGR2GRAY)
 
 def nothing(x): pass

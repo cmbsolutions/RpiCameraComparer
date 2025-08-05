@@ -4,7 +4,7 @@ import random
 from pathlib import Path
 import os
 
-FONT_PATH = "/usr/share/fonts/truetype/msttcorefonts/"  # adjust as needed
+FONT_PATH = "c:/windows/fonts/"  # adjust as needed
 # 1) Figure out where *this* script lives, and make TrainingSet there
 BASE = Path(__file__).parent.resolve()
 OUT_DIR = BASE / "img3"
@@ -14,8 +14,8 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 fontsize=24
 
 #for fnt in ("cour", "arial", "times", "verdana"):
-fnt = "arial"
-font = ImageFont.truetype(f"{FONT_PATH}{fnt}.ttf", size=fontsize)  # pick a size similar to your ROIs
+fnt = "Arial"
+font = ImageFont.truetype(f"{FONT_PATH}{fnt}.TTF", size=fontsize)  # pick a size similar to your ROIs
 
 for i in range(1000):
     digits = ""

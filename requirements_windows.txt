@@ -1,6 +1,3 @@
-gpiozero==2.0.1
-RPI.GPIO==0.7.1
-picamera2==0.3.30
 Pillow==11.3.0
 PySide6==6.8.0.2
 PySide6_Addons==6.8.0.2
@@ -8,5 +5,5 @@ PySide6_Essentials==6.8.0.2
 pytesseract==0.3.13
 tensorflow==2.19.0
 opencv-python==4.12.0.88
-numpy==1.26.0
+numpy
 pycryptodome==3.23.0
