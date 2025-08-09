@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="main">
+    <file>gtk-dialog-error.png</file>
+    <file>dialog-cancel.png</file>
+    <file>forward.png</file>
     <file>gnome-session-halt.png</file>
     <file>gnome-session-reboot.png</file>
     <file>system-lock-screen.png</file>

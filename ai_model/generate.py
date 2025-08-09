@@ -7,11 +7,11 @@ import os
 FONT_PATH = "/usr/share/fonts/truetype/msttcorefonts/"  # adjust as needed
 # 1) Figure out where *this* script lives, and make TrainingSet there
 BASE = Path(__file__).parent.resolve()
-OUT_DIR = BASE / "TrainingSet6"
+OUT_DIR = BASE / "TrainingSet7"
 print(f"Using output directory: {OUT_DIR}")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-fontsize=32
+fontsize=24
 
 #for fnt in ("cour", "arial", "times", "verdana"):
 fnt = "arial"

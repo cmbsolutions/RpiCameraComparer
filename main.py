@@ -4,7 +4,7 @@ import cv2
 import numpy
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import QSettings, Signal, Qt, QUrl
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QDialog
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QMessageBox
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QSoundEffect
 from qglpicamera2_wrapper import QGlPicamera2
@@ -23,6 +23,7 @@ from pathlib import Path
 from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
 import subprocess
+import time
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
@@ -64,14 +65,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self._password = settings.value("password", "changeme", type=str)
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
-        
+
+        #metrics
+        self._speed = 0.0
+        self._matchcount = 0
+        self._matchcountTotal = settings.value("matchcounttotal", 0, type=int)
+        self._errorcount = 0
+        self._errorcountTotal = settings.value("errorcounttotal", 0, type=int)
+        self._last_time = None
+
+
         self._alarmsound = QSoundEffect()
         self._alarmsound.setSource(QUrl.fromLocalFile("alarm.wav"))
         self._alarmsound.setLoopCount(1)
         self._alarmsound.setVolume(1)
 
          # This is the AI model
-        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model6.keras")
+        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
         
         self.gpio_triggered.connect(self.onGpioTriggered)
 
@@ -200,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         match self._engine:
             case EngineType.AI_MODEL.value:
-                self._ai_thread[cam_idx] = RunAIThread(widget)
+                self._ai_thread[cam_idx] = RunAIThread(widget, self._model)
                 self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
                 self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
                 self._ai_thread[cam_idx].start()
@@ -240,9 +250,13 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._captured_digits[0] != self._captured_digits[1]:
                 self.onDigitsNotMatching()
             else:
+                self._matchcount += 1
+                self._matchcountTotal += 1
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
                 getattr(self.ui, "Frame_Error").show()
 
+        self.UpdateMetrics()
+        
         if self._save_images:
             self._image_thread[cam_idx] = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
             self._image_thread[cam_idx].finished.connect(lambda: self._image_thread[cam_idx].quit())
@@ -262,6 +276,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._audio:
             self._alarmsound.play()
 
+        self._errorcount += 1
+        self._errorcountTotal += 1
+
+
 
     def handle_gpiotrigger(self):
         self.gpio_triggered.emit()
@@ -270,8 +288,22 @@ class MainWindow(QtWidgets.QMainWindow):
     def onGpioTriggered(self):
         if self._capturing and not self._halt:
             self._captured = 0
+            self.calculateSpeed()
 
             self.CompareImages()
+
+
+    def calculateSpeed(self):
+        now = time.perf_counter()  # high precision time
+
+        if self._last_time is not None:
+            period = now - self._last_time  # seconds per revolution
+            if period > 0:
+                rps = 1 / period       # revolutions per second
+                rpm = rps * 60
+                self._speed = rpm
+
+        self._last_time = now
 
 
     def StartCapturing(self):
@@ -279,10 +311,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self._capturing = False
             getattr(self.ui, "StartCapture").setText("Start capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-play-ltr.png"))
+            self.ui.bStopMachine.setEnabled(True)
         else:
             self._capturing = True
+            self._last_time = None
+            self._matchcount = 0
+            self._errorcount = 0
             getattr(self.ui, "StartCapture").setText("Stop capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-pause.png"))
+            self.ui.bStopMachine.setEnabled(False)
 
 
     def CompareImages(self):
@@ -312,6 +349,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.Cam1TestCapture.setEnabled(True)
 
     
+    def StartStopMachineHandler(self):
+        print(f"GPIO output value: {self.gpiooutput.value}")
+        if self.gpiooutput.value == 1:
+            self.gpiooutput.off()
+            self.ui.bStopMachine.setText("Start machine")
+            self.ui.bStopMachine.setIcon(QIcon(":/main/forward.png"))
+        else:
+            self.gpiooutput.on()
+            self.ui.bStopMachine.setText("Stop machine")
+            self.ui.bStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
+
+
     def SaveFileDialog(self):
         cam_idx = int(self.sender().objectName()[3])
         widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
@@ -336,28 +385,34 @@ class MainWindow(QtWidgets.QMainWindow):
             img.save(f"{filename}.png", format="PNG")
 
 
+    def UpdateMetrics(self):
+        self.ui.lcdSpeed.display(self._speed)
+        self.ui.lcdMatch.display(self._matchcount)
+        self.ui.lcdMatchTotal.display(self._matchcountTotal)
+        self.ui.lcdErrors.display(self._errorcount)
+        self.ui.lcdErrorsTotal.display(self._errorcountTotal)
+
+
     def ExitApplicationHandler(self):
         self.close()
 
 
     def RebootHandler(self):
-        if self._is_locked:
-            ok = self.ask_for_password(subject="Reboot")
-            if ok:
-                self.SaveSettings()
-                self.gpiooutput.off()
-                self.gpiotrigger.close()
-                subprocess.run(["sudo", "reboot", "--reboot"])
+        ok = self.ask_for_password(subject="Reboot")
+        if ok and self.ask_confirmation(action="reboot"):
+            self.SaveSettings()
+            self.gpiooutput.off()
+            self.gpiotrigger.close()
+            subprocess.run(["sudo", "reboot", "--reboot"])
 
 
     def ShutdownHandler(self):
-        if self._is_locked:
-            ok = self.ask_for_password(subject="Shutdown")
-            if ok:
-                self.SaveSettings()
-                self.gpiooutput.off()
-                self.gpiotrigger.close()
-                subprocess.run(["sudo", "shutdown", "-h", "now"])
+        ok = self.ask_for_password(subject="Shutdown")
+        if ok and self.ask_confirmation(action="shutdown"):
+            self.SaveSettings()
+            self.gpiooutput.off()
+            self.gpiotrigger.close()
+            subprocess.run(["sudo", "shutdown", "-h", "now"])
 
 
 # Settings dialog, and on close
@@ -380,7 +435,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True)
         self._is_locked = settings.value("is_locked", True)
-        self._password = settings.value("password", "RPICameraComparer")
+        self._password = settings.value("password", "changeme")
         self._audio = settings.value("audio", True, type=bool)
 
 
@@ -394,16 +449,49 @@ class MainWindow(QtWidgets.QMainWindow):
             roi = getattr(self.ui, f"Cam{idx}Source").GetRoi()
             settings.setValue(f"roi/{idx}", roi)
 
+        settings.setValue("errorcounttotal", self._errorcountTotal)
+        settings.setValue("matchcounttotal", self._matchcountTotal)
+
 
     def UnlockHandler(self):
+        self.show_dialogs(reset=False)
         password, ok = QInputDialog.getText(self, "Unlock", "Enter password to unlock:", QLineEdit.Password)
+        self.show_dialogs(reset=True)
         return ok and (password == self._password)
 
 
     def ask_for_password(self, subject="Exit"):
+        self.show_dialogs(reset=False)
         password, ok = QInputDialog.getText(self, subject, "Please enter the password.", QLineEdit.Password)
+        self.show_dialogs(reset=True)
         return ok and (password == self._password)
     
+
+    def ask_confirmation(self, action="exit"):
+        self.show_dialogs(reset=False)
+        result = QMessageBox.question(
+            self,
+            f"Confirm {action}",
+            f"Are you sure you want to {action}?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        self.show_dialogs(reset=True)
+        return result == QMessageBox.Yes
+    
+
+    def show_dialogs(self, reset=False):
+        if not reset:
+            if self._fullscreen:
+                # Temporarily restore window borders to allow modal dialog
+                self.setWindowFlags(Qt.Window)
+                self.showNormal()  # Exit fullscreen so the dialog can show
+                self.activateWindow()  # Bring window to front
+        else:
+            if self._fullscreen:
+                # Restore fullscreen frameless mode
+                self.setWindowFlags(Qt.FramelessWindowHint)
+                self.showFullScreen()
+
 
     def closeEvent(self, event):
         if self._is_locked:

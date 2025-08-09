@@ -491,7 +491,7 @@
      <enum>QFrame::Shadow::Plain</enum>
     </property>
     <property name="lineWidth">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="midLineWidth">
      <number>0</number>
@@ -604,6 +604,321 @@
      </size>
     </property>
    </widget>
+   <widget class="QPushButton" name="bStopMachine">
+    <property name="geometry">
+     <rect>
+      <x>1620</x>
+      <y>820</y>
+      <width>281</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Stop machine</string>
+    </property>
+    <property name="icon">
+     <iconset resource="Resources/icons.qrc">
+      <normaloff>:/main/dialog-cancel.png</normaloff>:/main/dialog-cancel.png</iconset>
+    </property>
+    <property name="checkable">
+     <bool>false</bool>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+    <property name="flat">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdSpeed">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>830</y>
+      <width>171</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>12</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <property name="lineWidth">
+     <number>2</number>
+    </property>
+    <property name="midLineWidth">
+     <number>1</number>
+    </property>
+    <property name="smallDecimalPoint">
+     <bool>false</bool>
+    </property>
+    <property name="mode">
+     <enum>QLCDNumber::Mode::Dec</enum>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::SegmentStyle::Filled</enum>
+    </property>
+    <property name="value" stdset="0">
+     <double>1.126000000000000</double>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdMatch">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>900</y>
+      <width>171</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>12</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <property name="lineWidth">
+     <number>2</number>
+    </property>
+    <property name="midLineWidth">
+     <number>1</number>
+    </property>
+    <property name="digitCount">
+     <number>8</number>
+    </property>
+    <property name="mode">
+     <enum>QLCDNumber::Mode::Dec</enum>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::SegmentStyle::Filled</enum>
+    </property>
+    <property name="value" stdset="0">
+     <double>12345678.000000000000000</double>
+    </property>
+    <property name="intValue" stdset="0">
+     <number>12345678</number>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdErrors">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>970</y>
+      <width>171</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>12</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <property name="lineWidth">
+     <number>2</number>
+    </property>
+    <property name="midLineWidth">
+     <number>1</number>
+    </property>
+    <property name="digitCount">
+     <number>8</number>
+    </property>
+    <property name="mode">
+     <enum>QLCDNumber::Mode::Dec</enum>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::SegmentStyle::Filled</enum>
+    </property>
+    <property name="value" stdset="0">
+     <double>12345678.000000000000000</double>
+    </property>
+    <property name="intValue" stdset="0">
+     <number>12345678</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>830</y>
+      <width>111</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>26</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="text">
+     <string>Speed:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdErrorsTotal">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>970</y>
+      <width>171</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>12</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <property name="lineWidth">
+     <number>2</number>
+    </property>
+    <property name="midLineWidth">
+     <number>1</number>
+    </property>
+    <property name="digitCount">
+     <number>8</number>
+    </property>
+    <property name="mode">
+     <enum>QLCDNumber::Mode::Dec</enum>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::SegmentStyle::Filled</enum>
+    </property>
+    <property name="value" stdset="0">
+     <double>12345678.000000000000000</double>
+    </property>
+    <property name="intValue" stdset="0">
+     <number>12345678</number>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdMatchTotal">
+    <property name="geometry">
+     <rect>
+      <x>310</x>
+      <y>900</y>
+      <width>171</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>12</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Shape::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Shadow::Raised</enum>
+    </property>
+    <property name="lineWidth">
+     <number>2</number>
+    </property>
+    <property name="midLineWidth">
+     <number>1</number>
+    </property>
+    <property name="digitCount">
+     <number>8</number>
+    </property>
+    <property name="mode">
+     <enum>QLCDNumber::Mode::Dec</enum>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::SegmentStyle::Filled</enum>
+    </property>
+    <property name="value" stdset="0">
+     <double>12345678.000000000000000</double>
+    </property>
+    <property name="intValue" stdset="0">
+     <number>12345678</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>970</y>
+      <width>111</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>26</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="text">
+     <string>Errors:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>900</y>
+      <width>111</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Piboto [Goog]</family>
+      <pointsize>26</pointsize>
+      <stylestrategy>PreferAntialias</stylestrategy>
+     </font>
+    </property>
+    <property name="text">
+     <string>Match:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+    </property>
+   </widget>
    <zorder>Frame_Error</zorder>
    <zorder>Cam0FocusPlus</zorder>
    <zorder>Cam0FocusMinus</zorder>
@@ -621,6 +936,15 @@
    <zorder>ResetError</zorder>
    <zorder>Cam0SaveCapture</zorder>
    <zorder>bTriggerManual</zorder>
+   <zorder>bStopMachine</zorder>
+   <zorder>lcdSpeed</zorder>
+   <zorder>lcdMatch</zorder>
+   <zorder>lcdErrors</zorder>
+   <zorder>label</zorder>
+   <zorder>lcdErrorsTotal</zorder>
+   <zorder>lcdMatchTotal</zorder>
+   <zorder>label_2</zorder>
+   <zorder>label_3</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -1007,6 +1331,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>bStopMachine</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>StartStopMachineHandler()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1730</x>
+     <y>888</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1408</x>
+     <y>872</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>ResetCamRoi()</slot>
@@ -1024,5 +1364,6 @@
   <slot>UnlockHandler()</slot>
   <slot>RebootHandler()</slot>
   <slot>ShutdownHandler()</slot>
+  <slot>StartStopMachineHandler()</slot>
  </slots>
 </ui>

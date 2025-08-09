@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 BASE = Path(__file__).parent.resolve()
-DATA_DIR = BASE / "TrainingSet6/"
+DATA_DIR = BASE / "TrainingSet7/"
 print(f"Using data directory: {DATA_DIR}")
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -53,4 +53,4 @@ history = model.fit(
 )
 
 # 6) Save your model
-model.save(BASE / "digit_cnn_model6.keras")
+model.save(BASE / "digit_cnn_model7.keras")
