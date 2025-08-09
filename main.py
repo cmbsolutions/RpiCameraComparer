@@ -23,6 +23,7 @@ from pathlib import Path
 from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
 import subprocess
+import time
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
@@ -64,7 +65,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self._password = settings.value("password", "changeme", type=str)
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
-        
+
+        #metrics
+        self._speed = 0.0
+        self._matchcount = 0
+        self._matchcountTotal = settings.value("matchcounttotal", 0, type=int)
+        self._errorcount = 0
+        self._errorcountTotal = settings.value("errorcounttotal", 0, type=int)
+        self._last_time = None
+
+
         self._alarmsound = QSoundEffect()
         self._alarmsound.setSource(QUrl.fromLocalFile("alarm.wav"))
         self._alarmsound.setLoopCount(1)
@@ -240,9 +250,13 @@ class MainWindow(QtWidgets.QMainWindow):
             if self._captured_digits[0] != self._captured_digits[1]:
                 self.onDigitsNotMatching()
             else:
+                self._matchcount += 1
+                self._matchcountTotal += 1
                 getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
                 getattr(self.ui, "Frame_Error").show()
 
+        self.UpdateMetrics()
+        
         if self._save_images:
             self._image_thread[cam_idx] = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
             self._image_thread[cam_idx].finished.connect(lambda: self._image_thread[cam_idx].quit())
@@ -262,6 +276,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._audio:
             self._alarmsound.play()
 
+        self._errorcount += 1
+        self._errorcountTotal += 1
+
+
 
     def handle_gpiotrigger(self):
         self.gpio_triggered.emit()
@@ -270,8 +288,22 @@ class MainWindow(QtWidgets.QMainWindow):
     def onGpioTriggered(self):
         if self._capturing and not self._halt:
             self._captured = 0
+            self.calculateSpeed()
 
             self.CompareImages()
+
+
+    def calculateSpeed(self):
+        now = time.perf_counter()  # high precision time
+
+        if self._last_time is not None:
+            period = now - self._last_time  # seconds per revolution
+            if period > 0:
+                rps = 1 / period       # revolutions per second
+                rpm = rps * 60
+                self._speed = rpm
+
+        self._last_time = now
 
 
     def StartCapturing(self):
@@ -279,12 +311,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self._capturing = False
             getattr(self.ui, "StartCapture").setText("Start capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-play-ltr.png"))
-            self.ui.bStartStopMachine.setEnabled(True)
+            self.ui.bStopMachine.setEnabled(True)
         else:
             self._capturing = True
+            self._last_time = None
+            self._matchcount = 0
+            self._errorcount = 0
             getattr(self.ui, "StartCapture").setText("Stop capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-pause.png"))
-            self.ui.bStartStopMachine.setEnabled(False)
+            self.ui.bStopMachine.setEnabled(False)
 
 
     def CompareImages(self):
@@ -350,6 +385,14 @@ class MainWindow(QtWidgets.QMainWindow):
             img.save(f"{filename}.png", format="PNG")
 
 
+    def UpdateMetrics(self):
+        self.ui.lcdSpeed.display(self._speed)
+        self.ui.lcdMatch.display(self._matchcount)
+        self.ui.lcdMatchTotal.display(self._matchcountTotal)
+        self.ui.lcdErrors.display(self._errorcount)
+        self.ui.lcdErrorsTotal.display(self._errorcountTotal)
+
+
     def ExitApplicationHandler(self):
         self.close()
 
@@ -405,6 +448,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 settings.setValue(f"lensposition/{idx}", 0.0)
             roi = getattr(self.ui, f"Cam{idx}Source").GetRoi()
             settings.setValue(f"roi/{idx}", roi)
+
+        settings.setValue("errorcounttotal", self._errorcountTotal)
+        settings.setValue("matchcounttotal", self._matchcountTotal)
 
 
     def UnlockHandler(self):
