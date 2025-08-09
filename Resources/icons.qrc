@@ -1,5 +1,9 @@
 <RCC>
   <qresource prefix="main">
+    <file>dialog-warning_icon.png</file>
+    <file>dialog-error.png</file>
+    <file>dialog-warning.png</file>
+    <file>dialog-question.png</file>
     <file>gtk-dialog-error.png</file>
     <file>dialog-cancel.png</file>
     <file>forward.png</file>

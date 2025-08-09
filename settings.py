@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QDialog, QMe
 from PySide6.QtGui import QIcon
 from settingsWindow import Ui_DialogSettings
 from enumerations import EngineType
+from navicatEncrypt import NavicatCrypto
 
 class SettingsDialog(QtWidgets.QDialog):
     settings_changed = Signal()
@@ -13,6 +14,7 @@ class SettingsDialog(QtWidgets.QDialog):
 
         self.ui = Ui_DialogSettings()
         self.ui.setupUi(self)
+        self._navicat_crypto = NavicatCrypto()
 
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
         
@@ -23,10 +25,10 @@ class SettingsDialog(QtWidgets.QDialog):
         self.ui.checkBoxSaveImages.setChecked(settings.value("saveimages", True, type=bool))
         self.ui.checkBoxClosing.setChecked(settings.value("is_locked", True, type=bool))
         self.ui.checkBoxPlayAudio.setChecked(settings.value("audio", True, type=bool))
-        self.ui.lineEditPassword.setText(settings.value("password", "RPICameraComparer"))
+        self.ui.lineEditPassword.setText(self._navicat_crypto.DecryptString(settings.value("password", "", type=str)))
         self.ui.checkBoxFullScreen.setChecked(settings.value("fullscreen", True, type=bool))
 
-        self._old_password = settings.value("password", "RPICameraComparer")
+        self._old_password = self._navicat_crypto.DecryptString(settings.value("password", "", type=str))
         self.ui.buttonBox.accepted.connect(self.accept)
         self.ui.buttonBox.rejected.connect(self.reject)
     
@@ -36,7 +38,7 @@ class SettingsDialog(QtWidgets.QDialog):
         settings.setValue("engine", self.ui.comboBoxEngine.currentText())
         settings.setValue("saveimages", self.ui.checkBoxSaveImages.isChecked())
         settings.setValue("is_locked", self.ui.checkBoxClosing.isChecked())
-        settings.setValue("password", self.ui.lineEditPassword.text())
+        settings.setValue("password", self._navicat_crypto.EncryptString(self.ui.lineEditPassword.text()))
         settings.setValue("audio", self.ui.checkBoxPlayAudio.isChecked())
         settings.setValue("fullscreen", self.ui.checkBoxFullScreen.isChecked())
         self.settings_changed.emit()

@@ -24,6 +24,8 @@ from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
 import subprocess
 import time
+from navicatEncrypt import NavicatCrypto
+
 
 # ───── Configuration ─────
 TRIGGER_PIN = 4
@@ -45,9 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.Frame_Error.hide()
-        settings = QSettings("CMBSolutions", "RpiCameraComparer")
-        self._lens_pos = [float(settings.value(f"lensposition/{i}", 0.0)) for i in (0, 1)]
-        self._roivals = [settings.value(f"roi/{i}", None) for i in (0, 1)]
+
         self._focus_supported = {}
         self._frame_array = {}
         self.collecting = False
@@ -59,10 +59,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self._captured_digits = {}
         self._captured = 0
         self._halt = False
+
+        self._navicat_crypto = NavicatCrypto()
+
+        # Load settings
+        settings = QSettings("CMBSolutions", "RpiCameraComparer")
+        self._lens_pos = [float(settings.value(f"lensposition/{i}", 0.0)) for i in (0, 1)]
+        self._roivals = [settings.value(f"roi/{i}", None) for i in (0, 1)]
         self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True, type=bool)
         self._is_locked = settings.value("is_locked", False, type=bool)
-        self._password = settings.value("password", "changeme", type=str)
+        self._password = self._navicat_crypto.DecryptString(settings.value("password", "", type=str))
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
 
@@ -73,14 +80,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self._errorcount = 0
         self._errorcountTotal = settings.value("errorcounttotal", 0, type=int)
         self._last_time = None
+        self.UpdateMetrics()
 
-
+        #sound component
         self._alarmsound = QSoundEffect()
         self._alarmsound.setSource(QUrl.fromLocalFile("alarm.wav"))
         self._alarmsound.setLoopCount(1)
         self._alarmsound.setVolume(1)
 
-         # This is the AI model
+         # This is the AI model, we load it here instead of in the ai thread because it is large and we want to avoid loading it multiple times
         self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
         
         self.gpio_triggered.connect(self.onGpioTriggered)
@@ -417,16 +425,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
 # Settings dialog, and on close
     def SettingsHandler(self):
-        if self._is_locked:
-            ok = self.ask_for_password(subject="Modify settings")
-            if ok:
+        if not self._capturing:
+            if self._is_locked:
+                ok = self.ask_for_password(subject="Modify settings")
+                if ok:
+                    settings = SettingsDialog(self)
+                    settings.settings_changed.connect(self.ReloadSettings)
+                    result = settings.exec()
+            else:
                 settings = SettingsDialog(self)
                 settings.settings_changed.connect(self.ReloadSettings)
                 result = settings.exec()
-        else:
-            settings = SettingsDialog(self)
-            settings.settings_changed.connect(self.ReloadSettings)
-            result = settings.exec()
             
 
     def ReloadSettings(self):
@@ -435,7 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._engine = settings.value("engine", EngineType.PYTESSERACT_OCR.value)
         self._save_images = settings.value("saveimages", True)
         self._is_locked = settings.value("is_locked", True)
-        self._password = settings.value("password", "changeme")
+        self._password = self._navicat_crypto.DecryptString(settings.value("password", "", type=str))
         self._audio = settings.value("audio", True, type=bool)
 
 
