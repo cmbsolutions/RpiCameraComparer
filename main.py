@@ -53,8 +53,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.collecting = False
         self._capture_thread = {}
         self._ocr_thread = {}
+        self._ocr_thread_busy = {}
         self._ai_thread = {}
         self._image_thread = {}
+        self._image_thread_busy = {}
         self._capturing = False
         self._captured_digits = {}
         self._captured = 0
@@ -130,6 +132,9 @@ class MainWindow(QtWidgets.QMainWindow):
             camw.show()
             camw.picam2.start(show_preview=True)  
  
+            self._ocr_thread_busy[idx] = False
+            self._image_thread_busy[idx] = False
+
             # Check if there is AfMode available on the camera
             available = camw.picam2.camera_controls.keys()
 
@@ -218,34 +223,33 @@ class MainWindow(QtWidgets.QMainWindow):
 
         match self._engine:
             case EngineType.AI_MODEL.value:
-                self._ai_thread[cam_idx] = RunAIThread(widget, self._model)
-                self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
-                self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
-                self._ai_thread[cam_idx].start()
+                    if self._ai_thread_busy[cam_idx]:
+                        prev = self._ai_thread.get(cam_idx)
+                        if prev and prev.isRunning():
+                            if not prev.wait(50):
+                                return
+
+                    self._ai_thread_busy[cam_idx] = True
+                    t = RunAIThread(widget)
+                    t.setParent(self)
+                    t.ai_captured_result.connect(self.digits_captured)
+                    t.finished.connect(t.deleteLater)
+                    self._ai_thread[cam_idx] = t
+                    t.start()
             case EngineType.PYTESSERACT_OCR.value:
-                self._ocr_thread[cam_idx] = RunOCRThread(widget)
-                self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
-                self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
-                self._ocr_thread[cam_idx].start()
+                    if self._ocr_thread_busy[cam_idx]:
+                        prev = self._ocr_thread.get(cam_idx)
+                        if prev and prev.isRunning():
+                            if not prev.wait(50):
+                                return
 
-
-# Callback from capture_array from camera
-    def handleCaptured(self, frame_array, cam_idx):
-        self._cam_idx = cam_idx
-        self._frame_array[cam_idx] = frame_array
-        roi = getattr(self.ui, f"Cam{cam_idx}Source")._roi
-
-        match self._engine:
-            case EngineType.AI_MODEL.value:
-                self._ai_thread[cam_idx] = RunAIThread(frame_array, cam_idx, roi, self._model)
-                self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
-                self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].deleteLater())
-                self._ai_thread[cam_idx].start()
-            case EngineType.PYTESSERACT_OCR.value:
-                self._ocr_thread[cam_idx] = RunOCRThread(frame_array, cam_idx, roi)
-                self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
-                self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].deleteLater())
-                self._ocr_thread[cam_idx].start()
+                    self._ocr_thread_busy[cam_idx] = True
+                    t = RunOCRThread(widget)
+                    t.setParent(self)
+                    t.ocr_captured_result.connect(self.digits_captured)
+                    t.finished.connect(t.deleteLater)
+                    self._ocr_thread[cam_idx] = t
+                    t.start()
 
 
     def digits_captured(self, rgb, cam_idx, digits):
@@ -253,6 +257,7 @@ class MainWindow(QtWidgets.QMainWindow):
             getattr(self.ui, f"Cam{cam_idx}CapturedValue").setText(f"CAM{cam_idx}: {digits}")
             self._captured_digits[cam_idx] = digits
             self._captured += 1
+            self._ocr_thread_busy[cam_idx] = False
 
         if self._captured >= 2:
             if self._captured_digits[0] != self._captured_digits[1]:
@@ -266,9 +271,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.UpdateMetrics()
         
         if self._save_images:
-            self._image_thread[cam_idx] = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
-            self._image_thread[cam_idx].finished.connect(lambda: self._image_thread[cam_idx].quit())
-            self._image_thread[cam_idx].start()
+            if self._image_thread_busy[cam_idx]:
+                return
+
+            self._image_thread_busy[cam_idx] = True
+            t = RunImageThread(IMG_DIR, rgb, cam_idx, digits)
+            t.setParent(self)
+            t.finished.connect(self.CompletedImageThread(cam_idx))
+            self._image_thread[cam_idx] = t
+            t.start()
+
+
+    def CompletedImageThread(self, cam_idx):
+        self._image_thread_busy[cam_idx] = False
 
 
     def onDigitsNotMatching(self):
@@ -336,15 +351,33 @@ class MainWindow(QtWidgets.QMainWindow):
 
             match self._engine:
                 case EngineType.AI_MODEL.value:
-                    self._ai_thread[cam_idx] = RunAIThread(widget)
-                    self._ai_thread[cam_idx].ai_captured_result.connect(self.digits_captured)
-                    self._ai_thread[cam_idx].finished.connect(lambda: self._ai_thread[cam_idx].quit())
-                    self._ai_thread[cam_idx].start()
+                    if self._ai_thread_busy[cam_idx]:
+                        prev = self._ai_thread.get(cam_idx)
+                        if prev and prev.isRunning():
+                            if not prev.wait(50):
+                                return
+
+                    self._ai_thread_busy[cam_idx] = True
+                    t = RunAIThread(widget)
+                    t.setParent(self)
+                    t.ai_captured_result.connect(self.digits_captured)
+                    t.finished.connect(t.deleteLater)
+                    self._ai_thread[cam_idx] = t
+                    t.start()
                 case EngineType.PYTESSERACT_OCR.value:
-                    self._ocr_thread[cam_idx] = RunOCRThread(widget)
-                    self._ocr_thread[cam_idx].ocr_captured_result.connect(self.digits_captured)
-                    self._ocr_thread[cam_idx].finished.connect(lambda: self._ocr_thread[cam_idx].quit())
-                    self._ocr_thread[cam_idx].start()
+                    if self._ocr_thread_busy[cam_idx]:
+                        prev = self._ocr_thread.get(cam_idx)
+                        if prev and prev.isRunning():
+                            if not prev.wait(50):
+                                return
+
+                    self._ocr_thread_busy[cam_idx] = True
+                    t = RunOCRThread(widget)
+                    t.setParent(self)
+                    t.ocr_captured_result.connect(self.digits_captured)
+                    t.finished.connect(t.deleteLater)
+                    self._ocr_thread[cam_idx] = t
+                    t.start()
 
 
     def ResetError(self):
@@ -369,28 +402,28 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.bStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
 
 
-    def SaveFileDialog(self):
-        cam_idx = int(self.sender().objectName()[3])
-        widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
+    # def SaveFileDialog(self):
+    #     cam_idx = int(self.sender().objectName()[3])
+    #     widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
 
-        self._capture_thread[cam_idx] = CaptureThread(widget)
-        self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
-        self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
-        self._capture_thread[cam_idx].start()
+    #     self._capture_thread[cam_idx] = CaptureThread(widget)
+    #     self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
+    #     self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
+    #     self._capture_thread[cam_idx].start()
 
 
-    def SaveFileDialogHandler(self, frame_array, cam_idx):
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self,
-            caption="Save Image As...",
-            dir="",
-            filter="PNG Files (*.png);;JPEG Files (*.jpg *.jpeg);;All Files (*)",
-            options=QFileDialog.Options()
-        )
-        if filename:
-            rgb = frame_array[...,:3].copy()
-            img = Image.fromarray(frame_array)
-            img.save(f"{filename}.png", format="PNG")
+    # def SaveFileDialogHandler(self, frame_array, cam_idx):
+    #     filename, _ = QFileDialog.getSaveFileName(
+    #         parent=self,
+    #         caption="Save Image As...",
+    #         dir="",
+    #         filter="PNG Files (*.png);;JPEG Files (*.jpg *.jpeg);;All Files (*)",
+    #         options=QFileDialog.Options()
+    #     )
+    #     if filename:
+    #         rgb = frame_array[...,:3].copy()
+    #         img = Image.fromarray(frame_array)
+    #         img.save(f"{filename}.png", format="PNG")
 
 
     def UpdateMetrics(self):
@@ -463,44 +496,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def UnlockHandler(self):
-        self.show_dialogs(reset=False)
-        password, ok = QInputDialog.getText(self, "Unlock", "Enter password to unlock:", QLineEdit.Password)
-        self.show_dialogs(reset=True)
-        return ok and (password == self._password)
+        return self.ask_for_password(subject="Unlock Application")
 
 
-    def ask_for_password(self, subject="Exit"):
-        self.show_dialogs(reset=False)
-        password, ok = QInputDialog.getText(self, subject, "Please enter the password.", QLineEdit.Password)
-        self.show_dialogs(reset=True)
-        return ok and (password == self._password)
+    def ask_for_password(self, subject: str) -> bool:
+        dlg = QInputDialog(self)  # parent = main window
+        dlg.setWindowTitle(subject)
+        dlg.setLabelText("Please enter the password.")
+        dlg.setTextEchoMode(QLineEdit.Password)
+
+        dlg.setWindowModality(Qt.ApplicationModal)
+        dlg.setWindowFlag(Qt.Tool, True)  # stays on top of fullscreen parent
+
+        if dlg.exec() == QInputDialog.Accepted:
+            return dlg.textValue() == self._password
+        return False
     
 
-    def ask_confirmation(self, action="exit"):
-        self.show_dialogs(reset=False)
-        result = QMessageBox.question(
-            self,
-            f"Confirm {action}",
-            f"Are you sure you want to {action}?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        self.show_dialogs(reset=True)
-        return result == QMessageBox.Yes
+    def ask_confirmation(self, action: str) -> bool:
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Question)
+        msg.setWindowTitle(f"Confirm {action}")
+        msg.setText(f"Are you sure you want to {action}?")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg.setDefaultButton(QMessageBox.No)
+
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.Tool, True)             # stays on top of its parent
+        return msg.exec() == QMessageBox.Yes
     
-
-    def show_dialogs(self, reset=False):
-        if not reset:
-            if self._fullscreen:
-                # Temporarily restore window borders to allow modal dialog
-                self.setWindowFlags(Qt.Window)
-                self.showNormal()  # Exit fullscreen so the dialog can show
-                self.activateWindow()  # Bring window to front
-        else:
-            if self._fullscreen:
-                # Restore fullscreen frameless mode
-                self.setWindowFlags(Qt.FramelessWindowHint)
-                self.showFullScreen()
-
 
     def closeEvent(self, event):
         if self._is_locked:
