@@ -568,19 +568,6 @@
      </size>
     </property>
    </widget>
-   <widget class="QPushButton" name="Cam0SaveCapture">
-    <property name="geometry">
-     <rect>
-      <x>520</x>
-      <y>700</y>
-      <width>171</width>
-      <height>61</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Save capture</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="bTriggerManual">
     <property name="geometry">
      <rect>
@@ -934,7 +921,6 @@
    <zorder>Cam1Slider</zorder>
    <zorder>StartCapture</zorder>
    <zorder>ResetError</zorder>
-   <zorder>Cam0SaveCapture</zorder>
    <zorder>bTriggerManual</zorder>
    <zorder>bStopMachine</zorder>
    <zorder>lcdSpeed</zorder>
@@ -1216,22 +1202,6 @@
     <hint type="destinationlabel">
      <x>793</x>
      <y>499</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>Cam0SaveCapture</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>SaveFileDialog()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>520</x>
-     <y>727</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>187</x>
-     <y>506</y>
     </hint>
    </hints>
   </connection>

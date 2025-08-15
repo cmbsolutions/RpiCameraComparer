@@ -1,50 +1,49 @@
 import tensorflow as tf
 import cv2
-import numpy
+import numpy as np
 from pathlib import Path
 import os
 import time
 
 
-def segment_digits(roi_img, min_area=100, max_area=5000):
-    """
-    Given a color or gray ROI containing 1�5 digits in roughly a row,
-    return a list of (x, w, digit_img) tuples, sorted by x.
-    """
-    # 1) Preprocess
-    gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY) \
-        if roi_img.ndim == 3 else roi_img
-    # increase contrast & binarize
-    blur = cv2.GaussianBlur(gray, (5,5), 0)
-    _, th = cv2.threshold(blur, 0, 255,
-                        cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+def segment_digits(roi_img, min_area=50, max_area=5000):
+    gray = cv2.cvtColor(roi_img, cv2.COLOR_BGR2GRAY) if roi_img.ndim == 3 else roi_img
 
-    # 2) Morphological closing to join broken strokes
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
-    closed = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel, iterations=1)
+    # 1. Gaussian blur to reduce noise
+    # blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # 3) Find contours
-    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL,
-                                cv2.CHAIN_APPROX_SIMPLE)
+    # 2. Threshold to binary image
+    _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+
+    # 3. Morphological closing to connect broken parts (horizontal bias)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 1))
+    clean = cv2.morphologyEx(th, cv2.MORPH_CLOSE, kernel)
+
+    # find contours
+    contours, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL,
+                                   cv2.CHAIN_APPROX_SIMPLE)
 
     rois = []
     for cnt in contours:
-        x,y,w,h = cv2.boundingRect(cnt)
-        area = w*h
-        # filter out noise or huge background blobs
+        x, y, w, h = cv2.boundingRect(cnt)
+        area = w * h
         if area < min_area or area > max_area:
             continue
-        # Extract the digit sub-image, pad it a little
-        pad = 2
-        x0, y0 = max(0, x-pad), max(0, y-pad)
-        x1, y1 = min(gray.shape[1], x+w+pad), min(gray.shape[0], y+h+pad)
-        digit_img = gray[y0:y1, x0:x1]
-        rois.append((x0, w, digit_img))
+        digit_img = gray[y:y + h, x:x + w]
+        rois.append((x, w, digit_img))
 
-    # 4) Sort left-to-right by the x coordinate
+    # 6. Sort left-to-right
     rois = sorted(rois, key=lambda item: item[0])
     return rois
-       
+
+
+def center_and_pad(img, size=64):
+    h, w = img.shape
+    canvas = np.full((size, size), 255, dtype=np.uint8)  # white background
+    y_offset = (size - h) // 2
+    x_offset = (size - w) // 2
+    canvas[y_offset:y_offset + h, x_offset:x_offset + w] = img
+    return canvas
 
 
 # Path to the folder with images
@@ -53,7 +52,7 @@ IMG_DIR = BASE / "img3"
 print(f"Using input directory: {IMG_DIR}")
 
 #AI Model
-model = tf.keras.models.load_model(BASE / "../ai_model/digit_cnn_model6.keras")
+model = tf.keras.models.load_model(BASE / "../ai_model/digit_cnn_model7.keras")
 
 # Stats
 correct = 0
@@ -75,6 +74,7 @@ for img_path in IMG_DIR.glob("*.png"):
     segments = segment_digits(img)
     digits = []
     for _, _, digit_img in segments:
+        digit_img = center_and_pad(digit_img)
         # resize to your CNN�s input size (64�64), normalize, etc.
         d = cv2.resize(digit_img, (64,64), interpolation=cv2.INTER_CUBIC)
         d = d.reshape(1,64,64,1)/255.0

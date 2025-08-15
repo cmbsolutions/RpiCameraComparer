@@ -1,4 +1,5 @@
 import sys
+import re
 from Crypto.Hash import SHA1
 from Crypto.Cipher import AES, Blowfish
 from Crypto.Util import strxor, Padding
@@ -9,12 +10,16 @@ class NavicatCrypto:
         self._Key = SHA1.new(Key).digest()
         self._Cipher = Blowfish.new(self._Key, Blowfish.MODE_ECB)
         self._IV = self._Cipher.encrypt(b'\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF')
+        self._pattern = re.compile(r'^(?:[0-9a-fA-F]{2})+$')
         
 
     def EncryptString(self, s : str):
         if type(s) != str:
             raise TypeError('Parameter s must be a str.')
         else:
+            if s == '':
+                return ''
+            
             plaintext = s.encode('ascii')
             ciphertext = b''
             cv = self._IV
@@ -37,6 +42,11 @@ class NavicatCrypto:
         if type(s) != str:
             raise TypeError('Parameter s must be str.')
         else:
+            if s == '':
+                return ''
+            if not self.is_valid_hex(s):
+                return s
+            
             plaintext = b''
             ciphertext = bytes.fromhex(s)
             cv = self._IV
@@ -53,3 +63,7 @@ class NavicatCrypto:
                 plaintext += strxor.strxor(ciphertext[8 * full_round:], cv[:left_length])
             
             return plaintext.decode('ascii')
+        
+
+    def is_valid_hex(self, s : str):
+        return bool(self._pattern.match(s))
