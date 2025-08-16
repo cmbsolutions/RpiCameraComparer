@@ -1,30 +1,26 @@
 import sys
 import re
-import cv2
-import numpy
+import subprocess
+import time
+import itertools
+import tensorflow as tf
 from PySide6 import QtWidgets, QtCore
-from PySide6.QtCore import QSettings, Signal, Qt, QUrl
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QMessageBox
+from PySide6.QtCore import QSettings, Signal, Qt, QUrl, QThreadPool
+from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QSoundEffect
 from qglpicamera2_wrapper import QGlPicamera2
 from mainWindow import Ui_MainWindow
-from functools import partial
 from libcamera import controls
-from capture_thread import CaptureThread
 from run_ocr_thread import RunOCRThread
 from run_ai_thread import RunAIThread
 from run_image_thread import RunImageThread
-from PIL import Image
-from segment_digits import ai_helper
-import tensorflow as tf
 from enumerations import EngineType
 from pathlib import Path
 from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
-import subprocess
-import time
 from navicatEncrypt import NavicatCrypto
+from tasks import OCRTask
 
 
 # ───── Configuration ─────
@@ -160,6 +156,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 getattr(self.ui, f"Cam{idx}FocusMinus").setEnabled(False)
 
         self.LoadCamRoi()
+        self.setup_ocr_parallel()
+
+
+# Setup OCR parallel processing
+    # This is used to run OCR tasks in parallel using QRunnable and QThreadPool
+    # It allows us to capture images from both cameras and process them without blocking the UI
+    def setup_ocr_parallel(self):
+        self.pool = QThreadPool.globalInstance()
+        self.pool.setMaxThreadCount(2)
+        self.cam_widgets = {0: self.ui.Cam0Source, 1: self.ui.Cam1Source}
+        self._ocr_busy = {0: False, 1: False}
+        self._pending = {}
+        self._batch_counter = itertools.count(1)
+
 
 # ROI stuff
     def ResetCamRoi(self, checked: bool):
@@ -286,6 +296,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._image_thread_busy[cam_idx] = False
 
 
+# halt the machine
     def onDigitsNotMatching(self):
         self.gpiooutput.off()
         self._halt = True
@@ -303,17 +314,51 @@ class MainWindow(QtWidgets.QMainWindow):
         self._errorcountTotal += 1
 
 
-
+# GPIO trigger handler
     def handle_gpiotrigger(self):
         self.gpio_triggered.emit()
 
 
+# This is called when the GPIO trigger is pressed
     def onGpioTriggered(self):
         if self._capturing and not self._halt:
+            if any(self._ocr_busy.values()):
+                self.onDigitsNotMatching()
+                self.display_error_message("The camera's are out of sync. This can happen when the machine is running to fast.\nSlow down the machine and try again.")
+                return
+            
             self._captured = 0
             self.calculateSpeed()
 
-            self.CompareImages()
+            batch_id = next(self._batch_counter)
+            self._pending[batch_id] = {}
+
+            for cam_idx, w in self.cam_widgets.items():
+                self._ocr_busy[cam_idx] = True
+                task = OCRTask(w, batch_id)
+                task.signals.result.connect(self._on_ocr_result, Qt.QueuedConnection)
+                task.signals.error.connect(self._on_ocr_error, Qt.QueuedConnection)
+                self.pool.start(task)
+
+
+    def _on_ocr_result(self, rgb, cam_idx, digits, batch_id):
+        self._ocr_busy[cam_idx] = False
+        bucket = self._pending.get(batch_id)
+        if bucket is None:
+            return
+        bucket[cam_idx] = (rgb, digits)
+        if len(bucket) == len(self.cam_widgets):
+            # both cams done -> deliver together
+            for idx, (img, dg) in sorted(bucket.items()):
+                self.digits_captured(img, idx, dg)   # your existing slot
+            self._pending.pop(batch_id, None)
+            
+
+    def _on_ocr_error(self, cam_idx, msg, batch_id):
+        self._ocr_busy[cam_idx] = False
+        print(f"OCR error cam{cam_idx}: {msg}")
+        # finalize with whatever we got (optional)
+        self._pending.pop(batch_id, None)
 
 
     def calculateSpeed(self):
@@ -388,6 +433,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.bTriggerManual.setEnabled(True)
         self.ui.Cam0TestCapture.setEnabled(True)
         self.ui.Cam1TestCapture.setEnabled(True)
+        self._last_time = None
 
     
     def StartStopMachineHandler(self):
@@ -400,30 +446,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.gpiooutput.on()
             self.ui.bStopMachine.setText("Stop machine")
             self.ui.bStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
-
-
-    # def SaveFileDialog(self):
-    #     cam_idx = int(self.sender().objectName()[3])
-    #     widget = getattr(self.ui, f"Cam{cam_idx}Source").picam2
-
-    #     self._capture_thread[cam_idx] = CaptureThread(widget)
-    #     self._capture_thread[cam_idx].image_captured.connect(self.SaveFileDialogHandler)
-    #     self._capture_thread[cam_idx].finished.connect(lambda: self._capture_thread[cam_idx].deleteLater())
-    #     self._capture_thread[cam_idx].start()
-
-
-    # def SaveFileDialogHandler(self, frame_array, cam_idx):
-    #     filename, _ = QFileDialog.getSaveFileName(
-    #         parent=self,
-    #         caption="Save Image As...",
-    #         dir="",
-    #         filter="PNG Files (*.png);;JPEG Files (*.jpg *.jpeg);;All Files (*)",
-    #         options=QFileDialog.Options()
-    #     )
-    #     if filename:
-    #         rgb = frame_array[...,:3].copy()
-    #         img = Image.fromarray(frame_array)
-    #         img.save(f"{filename}.png", format="PNG")
 
 
     def UpdateMetrics(self):
@@ -524,6 +546,19 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.setWindowModality(Qt.ApplicationModal)
         msg.setWindowFlag(Qt.Tool, True)             # stays on top of its parent
         return msg.exec() == QMessageBox.Yes
+
+
+    def display_error_message(self, message: str) -> bool:
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Critical)
+        msg.setWindowTitle(f"Critial Error")
+        msg.setText(f"{message}")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setDefaultButton(QMessageBox.Ok)
+
+        msg.setWindowModality(Qt.ApplicationModal)
+        msg.setWindowFlag(Qt.Tool, True)             # stays on top of its parent
+        return msg.exec() == QMessageBox.Ok
     
 
     def closeEvent(self, event):
