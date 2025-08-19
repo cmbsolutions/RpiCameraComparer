@@ -1,4 +1,5 @@
 import sys
+import os
 import re
 import subprocess
 import time
@@ -21,6 +22,10 @@ from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
 from navicatEncrypt import NavicatCrypto
 from tasks import OCRTask
+
+#os.environ["TESSDATA_PREFIX"] = "/usr/share/tesseract-ocr/5"
+os.environ.setdefault("OMP_THREAD_LIMIT", "1")
+os.environ.setdefault("OMP_NUM_THREADS",  "1")
 
 
 # ───── Configuration ─────
@@ -73,6 +78,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #metrics
         self._speed = 0.0
+        self._speed_perminute = 0.0
+        self._matched = 0
         self._matchcount = 0
         self._matchcountTotal = settings.value("matchcounttotal", 0, type=int)
         self._errorcount = 0
@@ -268,6 +275,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._captured_digits[cam_idx] = digits
             self._captured += 1
             self._ocr_thread_busy[cam_idx] = False
+            self._matched += 1
 
         if self._captured >= 2:
             if self._captured_digits[0] != self._captured_digits[1]:
@@ -321,44 +329,71 @@ class MainWindow(QtWidgets.QMainWindow):
 
 # This is called when the GPIO trigger is pressed
     def onGpioTriggered(self):
-        if self._capturing and not self._halt:
-            if any(self._ocr_busy.values()):
-                self.onDigitsNotMatching()
-                self.display_error_message("The camera's are out of sync. This can happen when the machine is running to fast.\nSlow down the machine and try again.")
-                return
-            
-            self._captured = 0
-            self.calculateSpeed()
+        if self._halt or not self._capturing:
+            return
+        
+        if any(self._ocr_busy.values()):
+            return
+        
+        self._captured = 0
+        self.calculateSpeed()
 
-            batch_id = next(self._batch_counter)
-            self._pending[batch_id] = {}
+        batch_id = next(self._batch_counter)
+        self._pending[batch_id] = {}
 
-            for cam_idx, w in self.cam_widgets.items():
-                self._ocr_busy[cam_idx] = True
-                task = OCRTask(w, batch_id)
-                task.signals.result.connect(self._on_ocr_result, Qt.QueuedConnection)
-                task.signals.error.connect(self._on_ocr_error, Qt.QueuedConnection)
-                self.pool.start(task)
+        for cam_idx, w in self.cam_widgets.items():
+            self._ocr_busy[cam_idx] = True
+            task = OCRTask(w, batch_id)
+            task.signals.result.connect(self._on_ocr_result, Qt.QueuedConnection)
+            task.signals.error.connect(self._on_ocr_error, Qt.QueuedConnection)
+            self.pool.start(task)
 
 
-    def _on_ocr_result(self, rgb, cam_idx, digits, batch_id):
+    def _on_ocr_result(self, rgb, cam_idx, digits, conf, batch_id):
         self._ocr_busy[cam_idx] = False
         bucket = self._pending.get(batch_id)
         if bucket is None:
             return
-        bucket[cam_idx] = (rgb, digits)
-        if len(bucket) == len(self.cam_widgets):
-            # both cams done -> deliver together
-            for idx, (img, dg) in sorted(bucket.items()):
-                self.digits_captured(img, idx, dg)   # your existing slot
-            self._pending.pop(batch_id, None)
+        bucket[cam_idx] = (rgb, digits, conf)
+        if len(bucket) == 2:
+                (rgb0, d0, c0) = bucket[0]
+                (rgb1, d1, c1) = bucket[1]
+                ok = (len(d0)==5 and len(d1)==5 and d0 == d1 and c0 >= 70 and c1 >= 70)
+                self._finalize_pair(batch_id, ok, (d0,c0), (d1,c1), (rgb0,rgb1))
+                self._pending.pop(batch_id, None)
             
 
     def _on_ocr_error(self, cam_idx, msg, batch_id):
         self._ocr_busy[cam_idx] = False
         print(f"OCR error cam{cam_idx}: {msg}")
         # finalize with whatever we got (optional)
+        self._finalize_pair(batch_id, False, ("",0.0), ("",0.0), (None,None))
         self._pending.pop(batch_id, None)
+
+
+    def _finalize_pair(self, batch_id, ok, left, right, rgbs):
+        (d0,c0), (d1,c1) = left, right
+
+        if ok:
+            if not self._halt:
+                self.ui.Cam0CapturedValue.setText(f"CAM0: {d0}")
+                self.ui.Cam1CapturedValue.setText(f"CAM1: {d1}")
+                self._captured_digits[0] = d0
+                self._captured_digits[1] = d1
+
+                if d0 != d1:
+                    self.onDigitsNotMatching()
+                else:
+                    self._matchcount += 1
+                    self._matchcountTotal += 1
+                    getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
+                    getattr(self.ui, "Frame_Error").show()
+            else:
+                return
+        else:
+            self.onDigitsNotMatching()
+
+        self.UpdateMetrics()
 
 
     def calculateSpeed(self):
@@ -370,6 +405,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 rps = 1 / period       # revolutions per second
                 rpm = rps * 60
                 self._speed = rpm
+                if self._matched > 0:
+                    mps = 1 / self._matched
+                    self._speed_perminute = mps
+                    self._mached = 0
 
         self._last_time = now
 
@@ -454,6 +493,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.lcdMatchTotal.display(self._matchcountTotal)
         self.ui.lcdErrors.display(self._errorcount)
         self.ui.lcdErrorsTotal.display(self._errorcountTotal)
+        self.ui.lcdSpeed_perminute.display(self._speed_perminute)    
 
 
     def ExitApplicationHandler(self):
@@ -579,6 +619,11 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 super().keyPressEvent(event)
 
+
+    def TimerHandler(self):
+        self._timer = QtCore.QTimer(self)
+        self._timer.timeout.connect(self.handle_gpiotrigger)
+        self._timer.start(500)
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

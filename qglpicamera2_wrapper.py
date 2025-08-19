@@ -18,6 +18,7 @@ class QGlPicamera2(QGlPicamera2):
         self.picam2 = Picamera2(camera_num=camid)
         cfg = self.picam2.create_preview_configuration(
             main = {"size":(width, height)},
+            lores = {"size":(width, height), "format":"YUV420"}
         )
         
         self.picam2.configure(cfg)
@@ -29,6 +30,7 @@ class QGlPicamera2(QGlPicamera2):
         self._origin = QPoint()
 
         self._frame_size = QSize(width, height)
+        self.frame = [width, height]
         self._roi = None
 
 
