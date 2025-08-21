@@ -22,6 +22,7 @@ from gpiozero import Button, OutputDevice
 from settings import SettingsDialog
 from navicatEncrypt import NavicatCrypto
 from tasks import OCRTask
+from dialogs import Dialogs
 
 #os.environ["TESSDATA_PREFIX"] = "/usr/share/tesseract-ocr/5"
 os.environ.setdefault("OMP_THREAD_LIMIT", "1")
@@ -94,8 +95,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._alarmsound.setVolume(1)
 
          # This is the AI model, we load it here instead of in the ai thread because it is large and we want to avoid loading it multiple times
-        self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
-        
+        if self._engine == EngineType.AI_MODEL.value:
+            self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
+        else:
+            self._model = None
+
         self.gpio_triggered.connect(self.onGpioTriggered)
 
         # Setup GPIO
@@ -108,7 +112,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setWindowFlags(Qt.FramelessWindowHint)
             self.showFullScreen()
 
-        QtCore.QTimer.singleShot(100, self._insert_cameras)
+        QtCore.QTimer.singleShot(20, self._insert_cameras)
     
 
     def _insert_cameras(self):
@@ -384,6 +388,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 if d0 != d1:
                     self.onDigitsNotMatching()
                 else:
+                    self._matched += 1
                     self._matchcount += 1
                     self._matchcountTotal += 1
                     getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
@@ -406,8 +411,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 rpm = rps * 60
                 self._speed = rpm
                 if self._matched > 0:
-                    mps = 1 / self._matched
-                    self._speed_perminute = mps
+                    mps = self._matched
+                    self._speed_perminute = mps * period
                     self._mached = 0
 
         self._last_time = now
@@ -419,6 +424,7 @@ class MainWindow(QtWidgets.QMainWindow):
             getattr(self.ui, "StartCapture").setText("Start capture")
             getattr(self.ui, "StartCapture").setIcon(QIcon(":/main/gtk-media-play-ltr.png"))
             self.ui.bStopMachine.setEnabled(True)
+            self._timer.stop()
         else:
             self._capturing = True
             self._last_time = None
@@ -501,8 +507,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def RebootHandler(self):
-        ok = self.ask_for_password(subject="Reboot")
-        if ok and self.ask_confirmation(action="reboot"):
+        pwentry = Dialogs.ask_for_password(self, subject="Reboot")
+        ok = pwentry == self._password
+        if ok and Dialogs.ask_confirmation(self, "reboot"):
             self.SaveSettings()
             self.gpiooutput.off()
             self.gpiotrigger.close()
@@ -510,8 +517,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def ShutdownHandler(self):
-        ok = self.ask_for_password(subject="Shutdown")
-        if ok and self.ask_confirmation(action="shutdown"):
+        pwentry = Dialogs.ask_for_password(self, subject="Shutdown")
+        ok = pwentry == self._password
+        if ok and Dialogs.ask_confirmation(self, "Shutdown"):
             self.SaveSettings()
             self.gpiooutput.off()
             self.gpiotrigger.close()
@@ -522,7 +530,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def SettingsHandler(self):
         if not self._capturing:
             if self._is_locked:
-                ok = self.ask_for_password(subject="Modify settings")
+                pwentry = Dialogs.ask_for_password(self, subject="Modify settings")
+                ok = pwentry == self._password
                 if ok:
                     settings = SettingsDialog(self)
                     settings.settings_changed.connect(self.ReloadSettings)
@@ -542,6 +551,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._password = self._navicat_crypto.DecryptString(settings.value("password", "", type=str))
         self._audio = settings.value("audio", True, type=bool)
 
+        if self._engine == EngineType.AI_MODEL.value and self._model is None:
+            self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
+
 
     def SaveSettings(self):
         settings = QSettings("CMBSolutions", "RpiCameraComparer")
@@ -558,53 +570,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def UnlockHandler(self):
-        return self.ask_for_password(subject="Unlock Application")
-
-
-    def ask_for_password(self, subject: str) -> bool:
-        dlg = QInputDialog(self)  # parent = main window
-        dlg.setWindowTitle(subject)
-        dlg.setLabelText("Please enter the password.")
-        dlg.setTextEchoMode(QLineEdit.Password)
-
-        dlg.setWindowModality(Qt.ApplicationModal)
-        dlg.setWindowFlag(Qt.Tool, True)  # stays on top of fullscreen parent
-
-        if dlg.exec() == QInputDialog.Accepted:
-            return dlg.textValue() == self._password
-        return False
-    
-
-    def ask_confirmation(self, action: str) -> bool:
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Question)
-        msg.setWindowTitle(f"Confirm {action}")
-        msg.setText(f"Are you sure you want to {action}?")
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        msg.setDefaultButton(QMessageBox.No)
-
-        msg.setWindowModality(Qt.ApplicationModal)
-        msg.setWindowFlag(Qt.Tool, True)             # stays on top of its parent
-        return msg.exec() == QMessageBox.Yes
-
-
-    def display_error_message(self, message: str) -> bool:
-        msg = QMessageBox(self)
-        msg.setIcon(QMessageBox.Critical)
-        msg.setWindowTitle(f"Critial Error")
-        msg.setText(f"{message}")
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.setDefaultButton(QMessageBox.Ok)
-
-        msg.setWindowModality(Qt.ApplicationModal)
-        msg.setWindowFlag(Qt.Tool, True)             # stays on top of its parent
-        return msg.exec() == QMessageBox.Ok
+        pwentry = Dialogs.ask_for_password(self, subject="Unlock Application")
+        return pwentry == self._password
     
 
     def closeEvent(self, event):
         if self._is_locked:
-            ok = self.ask_for_password(subject="Exit Application")
-            if not ok:
+            pwentry = Dialogs.ask_for_password(self, subject="Exit Application")
+            if pwentry != self._password:
                 event.ignore()
                 return
                 
@@ -624,6 +597,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._timer = QtCore.QTimer(self)
         self._timer.timeout.connect(self.handle_gpiotrigger)
         self._timer.start(500)
+
+
+    def TimerDialHandler(self, time_ms):
+        if self._timer.isActive():
+            self._timer.stop()
+        self._timer.setInterval(time_ms * 10)
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

@@ -1062,6 +1062,43 @@
      </size>
     </property>
    </widget>
+   <widget class="QDial" name="speedDial">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>790</y>
+      <width>101</width>
+      <height>101</height>
+     </rect>
+    </property>
+    <property name="minimum">
+     <number>1</number>
+    </property>
+    <property name="maximum">
+     <number>100</number>
+    </property>
+    <property name="sliderPosition">
+     <number>50</number>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Orientation::Horizontal</enum>
+    </property>
+    <property name="invertedAppearance">
+     <bool>false</bool>
+    </property>
+    <property name="invertedControls">
+     <bool>false</bool>
+    </property>
+    <property name="wrapping">
+     <bool>false</bool>
+    </property>
+    <property name="notchTarget">
+     <double>4.700000000000000</double>
+    </property>
+    <property name="notchesVisible">
+     <bool>true</bool>
+    </property>
+   </widget>
    <zorder>Frame_Error</zorder>
    <zorder>Cam0FocusPlus</zorder>
    <zorder>Cam0FocusMinus</zorder>
@@ -1093,6 +1130,7 @@
    <zorder>label_6</zorder>
    <zorder>label_7</zorder>
    <zorder>bTimer</zorder>
+   <zorder>speedDial</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -1495,6 +1533,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>speedDial</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>TimerDialHandler(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>607</x>
+     <y>876</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>731</x>
+     <y>883</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>ResetCamRoi()</slot>
@@ -1514,5 +1568,6 @@
   <slot>ShutdownHandler()</slot>
   <slot>StartStopMachineHandler()</slot>
   <slot>TimerHandler()</slot>
+  <slot>TimerDialHandler(int)</slot>
  </slots>
 </ui>

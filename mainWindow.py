@@ -16,10 +16,10 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QIcon, QImage, QKeySequence, QLinearGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
-    QLCDNumber, QLabel, QLayout, QMainWindow,
-    QMenu, QMenuBar, QPushButton, QSizePolicy,
-    QSlider, QWidget)
+from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
+    QHBoxLayout, QLCDNumber, QLabel, QLayout,
+    QMainWindow, QMenu, QMenuBar, QPushButton,
+    QSizePolicy, QSlider, QWidget)
 import icons_rc
 
 class Ui_MainWindow(object):
@@ -390,6 +390,18 @@ class Ui_MainWindow(object):
         self.bTimer.setGeometry(QRect(490, 810, 61, 61))
         self.bTimer.setIcon(icon)
         self.bTimer.setIconSize(QSize(36, 36))
+        self.speedDial = QDial(self.centralwidget)
+        self.speedDial.setObjectName(u"speedDial")
+        self.speedDial.setGeometry(QRect(560, 790, 101, 101))
+        self.speedDial.setMinimum(1)
+        self.speedDial.setMaximum(100)
+        self.speedDial.setSliderPosition(50)
+        self.speedDial.setOrientation(Qt.Orientation.Horizontal)
+        self.speedDial.setInvertedAppearance(False)
+        self.speedDial.setInvertedControls(False)
+        self.speedDial.setWrapping(False)
+        self.speedDial.setNotchTarget(4.700000000000000)
+        self.speedDial.setNotchesVisible(True)
         MainWindow.setCentralWidget(self.centralwidget)
         self.Frame_Error.raise_()
         self.Cam0FocusPlus.raise_()
@@ -422,6 +434,7 @@ class Ui_MainWindow(object):
         self.label_6.raise_()
         self.label_7.raise_()
         self.bTimer.raise_()
+        self.speedDial.raise_()
         self.menuBar = QMenuBar(MainWindow)
         self.menuBar.setObjectName(u"menuBar")
         self.menuBar.setGeometry(QRect(0, 0, 1920, 27))
@@ -461,6 +474,7 @@ class Ui_MainWindow(object):
         self.actionShutdownSystem.triggered.connect(MainWindow.ShutdownHandler)
         self.bStopMachine.clicked.connect(MainWindow.StartStopMachineHandler)
         self.bTimer.clicked.connect(MainWindow.TimerHandler)
+        self.speedDial.valueChanged.connect(MainWindow.TimerDialHandler)
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi

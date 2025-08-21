@@ -34,7 +34,7 @@ class OCRTask(QRunnable):
         self.signals = OCRSignals()
 
 
-    def run_pytesseract(self):
+    def runx(self):
         try:
             frame_array = self._picam2.picam2.capture_array()
             x1, y1, x2, y2 = self._picam2.GetRoi()
@@ -45,41 +45,30 @@ class OCRTask(QRunnable):
 
             rgb = cropped[...,:3].copy()
 
-            self.signals.result.emit(rgb, self._picam2.picam2.camera_idx, digits, self._batch_id)            
+            self.signals.result.emit(rgb, self._picam2.picam2.camera_idx, digits, 100.0, self._batch_id)            
         except Exception as e:
-            self.signals.error.emit(self._picam2.picam2.camera_idx, str(e), self._batch_id)
+            self.signals.error.emit(self._picam2.picam2.camera_idx, str(e), 0.0, self._batch_id)
 
 
-    @Slot()
     def run(self):
         try:
-            frame = self._picam2.picam2.capture_array("lores")
-            # if YUV420:
-            H, W = self._picam2.frame  # store this at setup from your config
-            gray = frame[:H, :W]
+            frame_array = self._picam2.picam2.capture_array()
             x1, y1, x2, y2 = self._picam2.GetRoi()
-            roi = gray[y1:y2, x1:x2]
-
-            # normalize size, binarize (very fast)
-            norm = cv2.resize(roi, (0,0), fx=1.5, fy=1.5, interpolation=cv2.INTER_AREA)
-            _, bw = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+            cropped = frame_array[y1:y2, x1:x2]
+            gray = cv2.cvtColor(cropped, cv2.COLOR_RGB2GRAY)
 
             api = get_api()
             # Pillow image expected by tesserocr
-            pil = Image.fromarray(bw)
+            pil = Image.fromarray(gray)
             api.SetImage(pil)
             text = api.GetUTF8Text().strip()
             conf = api.MeanTextConf()
             digits = ''.join(ch for ch in text if ch.isdigit())
 
-            # If you still need RGB for painting overlays, slice from original source
-            rgb = cv2.cvtColor(roi, cv2.COLOR_GRAY2RGB)  # or from color stream if you use RGB
 
             # quick retry if needed (bad conf or wrong length)
             if (len(digits) != 5 or conf < 70):
-                # try inverted threshold (some prints are light-on-dark)
-                _, bw2 = cv2.threshold(norm, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-                pil2 = Image.fromarray(bw2)
+                pil2 = Image.fromarray(gray)
                 api.SetImage(pil2)
                 text2 = api.GetUTF8Text().strip()
                 conf2 = api.MeanTextConf()
@@ -87,6 +76,8 @@ class OCRTask(QRunnable):
                 if conf2 > conf:
                     digits, conf = digits2, conf2
 
+            # If you still need RGB for painting overlays, slice from original source
+            rgb = cropped[...,:3].copy()
 
             self.signals.result.emit(rgb, self._picam2.picam2.camera_idx, digits, float(conf), self._batch_id)
         except Exception as e:
