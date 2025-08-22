@@ -77,6 +77,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
 
+        self._timer = QtCore.QTimer(self)
+        self._timer.timeout.connect(self.handle_gpiotrigger)
+        self._timer.setInterval(500)  # default interval
+        
         #metrics
         self._speed = 0.0
         self._speed_perminute = 0.0
@@ -378,23 +382,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def _finalize_pair(self, batch_id, ok, left, right, rgbs):
         (d0,c0), (d1,c1) = left, right
 
-        if ok:
-            if not self._halt:
-                self.ui.Cam0CapturedValue.setText(f"CAM0: {d0}")
-                self.ui.Cam1CapturedValue.setText(f"CAM1: {d1}")
-                self._captured_digits[0] = d0
-                self._captured_digits[1] = d1
+        if not self._halt:
+            self.ui.Cam0CapturedValue.setText(f"CAM0: {d0}")
+            self.ui.Cam1CapturedValue.setText(f"CAM1: {d1}")
 
-                if d0 != d1:
-                    self.onDigitsNotMatching()
-                else:
-                    self._matched += 1
-                    self._matchcount += 1
-                    self._matchcountTotal += 1
-                    getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
-                    getattr(self.ui, "Frame_Error").show()
-            else:
-                return
+        if ok:
+            self._matched += 1
+            self._matchcount += 1
+            self._matchcountTotal += 1
+            getattr(self.ui, "Frame_Error").setStyleSheet("color: green;")
+            getattr(self.ui, "Frame_Error").show()
         else:
             self.onDigitsNotMatching()
 
@@ -412,7 +409,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._speed = rpm
                 if self._matched > 0:
                     mps = self._matched
-                    self._speed_perminute = mps * period
+                    self._speed_perminute = mps * period / 60
                     self._mached = 0
 
         self._last_time = now
@@ -594,9 +591,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def TimerHandler(self):
-        self._timer = QtCore.QTimer(self)
-        self._timer.timeout.connect(self.handle_gpiotrigger)
-        self._timer.start(500)
+        self._timer.start()
 
 
     def TimerDialHandler(self, time_ms):
