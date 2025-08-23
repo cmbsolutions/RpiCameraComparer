@@ -68,6 +68,7 @@ class OCRTask(QRunnable):
 
             # quick retry if needed (bad conf or wrong length)
             if (len(digits) != 5 or conf < 70):
+                print(f"Retrying OCR for camera {self._picam2.picam2.camera_idx} with conf {conf} and digits '{digits}'")
                 pil2 = Image.fromarray(gray)
                 api.SetImage(pil2)
                 text2 = api.GetUTF8Text().strip()

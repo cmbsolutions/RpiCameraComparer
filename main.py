@@ -23,6 +23,7 @@ from settings import SettingsDialog
 from navicatEncrypt import NavicatCrypto
 from tasks import OCRTask
 from dialogs import Dialogs
+from performancelogger import PerfLogger
 
 #os.environ["TESSDATA_PREFIX"] = "/usr/share/tesseract-ocr/5"
 os.environ.setdefault("OMP_THREAD_LIMIT", "1")
@@ -45,6 +46,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
+
+        self._logger = PerfLogger.get()
+        self._logger.start_timer("app_init", message="Application init started")
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -116,6 +120,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setWindowFlags(Qt.FramelessWindowHint)
             self.showFullScreen()
 
+        self._logger.stop_timer("app_init", message="Application init completed")
+        self._logger.start_timer("load_cameras", message="Loading cameras")
+
         QtCore.QTimer.singleShot(20, self._insert_cameras)
     
 
@@ -172,6 +179,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.LoadCamRoi()
         self.setup_ocr_parallel()
+        self._logger.stop_timer("load_cameras", message="Cameras loaded")
 
 
 # Setup OCR parallel processing
@@ -348,6 +356,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         batch_id = next(self._batch_counter)
         self._pending[batch_id] = {}
+        self._logger.start_timer(f"ocr_batch_{batch_id}", message=f"OCR batch {batch_id} started")
 
         for cam_idx, w in self.cam_widgets.items():
             self._ocr_busy[cam_idx] = True
@@ -360,6 +369,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _on_ocr_result(self, rgb, cam_idx, digits, conf, batch_id):
         self._ocr_busy[cam_idx] = False
         bucket = self._pending.get(batch_id)
+        self._logger.tick(f"ocr_batch_{batch_id}", message=f"CAM {cam_idx} completed")
         if bucket is None:
             return
         bucket[cam_idx] = (rgb, digits, conf)
@@ -385,6 +395,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self._halt:
             self.ui.Cam0CapturedValue.setText(f"CAM0: {d0}")
             self.ui.Cam1CapturedValue.setText(f"CAM1: {d1}")
+
+        self._logger.stop_timer(f"ocr_batch_{batch_id}", message=f"OCR batch {batch_id} completed")
 
         if ok:
             self._matched += 1
@@ -598,6 +610,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._timer.isActive():
             self._timer.stop()
         self._timer.setInterval(time_ms * 10)
+        self.ui.lSpeed.setText(f"{time_ms * 10} ms")
 
 
 if __name__ == "__main__":
