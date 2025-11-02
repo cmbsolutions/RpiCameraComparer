@@ -1118,6 +1118,32 @@
      <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
+   <widget class="QPushButton" name="bLights0">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>700</y>
+      <width>151</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Lights On</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="bLights1">
+    <property name="geometry">
+     <rect>
+      <x>1470</x>
+      <y>700</y>
+      <width>151</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Lights On</string>
+    </property>
+   </widget>
    <zorder>Frame_Error</zorder>
    <zorder>Cam0FocusPlus</zorder>
    <zorder>Cam0FocusMinus</zorder>
@@ -1151,6 +1177,8 @@
    <zorder>bTimer</zorder>
    <zorder>speedDial</zorder>
    <zorder>lSpeed</zorder>
+   <zorder>bLights0</zorder>
+   <zorder>bLights1</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

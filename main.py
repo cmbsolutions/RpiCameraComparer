@@ -104,7 +104,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
          # This is the AI model, we load it here instead of in the ai thread because it is large and we want to avoid loading it multiple times
         if self._engine == EngineType.AI_MODEL.value:
-            self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
+            self._model = tf.keras.models.load_model("ai_model/digit_cnn_model8.keras")
         else:
             self._model = None
 
@@ -561,7 +561,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._audio = settings.value("audio", True, type=bool)
 
         if self._engine == EngineType.AI_MODEL.value and self._model is None:
-            self._model = tf.keras.models.load_model("ai_model/digit_cnn_model7.keras")
+            self._model = tf.keras.models.load_model("ai_model/digit_cnn_model8.keras")
 
 
     def SaveSettings(self):
