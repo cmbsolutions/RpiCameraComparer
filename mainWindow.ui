@@ -1118,30 +1118,70 @@
      <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QPushButton" name="bLights0">
+   <widget class="QDial" name="Cam0LightsDial">
     <property name="geometry">
      <rect>
-      <x>520</x>
-      <y>700</y>
-      <width>151</width>
-      <height>61</height>
+      <x>830</x>
+      <y>640</y>
+      <width>101</width>
+      <height>81</height>
      </rect>
     </property>
-    <property name="text">
-     <string>Lights On</string>
+    <property name="orientation">
+     <enum>Qt::Orientation::Horizontal</enum>
+    </property>
+    <property name="invertedAppearance">
+     <bool>false</bool>
+    </property>
+    <property name="invertedControls">
+     <bool>false</bool>
+    </property>
+    <property name="wrapping">
+     <bool>false</bool>
+    </property>
+    <property name="notchesVisible">
+     <bool>true</bool>
     </property>
    </widget>
-   <widget class="QPushButton" name="bLights1">
+   <widget class="QDial" name="Cam1LightsDial">
     <property name="geometry">
      <rect>
-      <x>1470</x>
-      <y>700</y>
-      <width>151</width>
-      <height>61</height>
+      <x>980</x>
+      <y>640</y>
+      <width>101</width>
+      <height>81</height>
+     </rect>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Orientation::Horizontal</enum>
+    </property>
+    <property name="invertedAppearance">
+     <bool>false</bool>
+    </property>
+    <property name="invertedControls">
+     <bool>false</bool>
+    </property>
+    <property name="wrapping">
+     <bool>false</bool>
+    </property>
+    <property name="notchesVisible">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_8">
+    <property name="geometry">
+     <rect>
+      <x>910</x>
+      <y>620</y>
+      <width>91</width>
+      <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Lights On</string>
+     <string>Lights</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignCenter</set>
     </property>
    </widget>
    <zorder>Frame_Error</zorder>
@@ -1177,8 +1217,9 @@
    <zorder>bTimer</zorder>
    <zorder>speedDial</zorder>
    <zorder>lSpeed</zorder>
-   <zorder>bLights0</zorder>
-   <zorder>bLights1</zorder>
+   <zorder>Cam0LightsDial</zorder>
+   <zorder>Cam1LightsDial</zorder>
+   <zorder>label_8</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -1597,6 +1638,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>Cam0LightsDial</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>LightsDialHandler(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>874</x>
+     <y>719</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>920</x>
+     <y>754</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Cam1LightsDial</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>LightsDialHandler(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1025</x>
+     <y>695</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1039</x>
+     <y>812</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>ResetCamRoi()</slot>
@@ -1617,5 +1690,6 @@
   <slot>StartStopMachineHandler()</slot>
   <slot>TimerHandler()</slot>
   <slot>TimerDialHandler(int)</slot>
+  <slot>LightsDialHandler(int)</slot>
  </slots>
 </ui>

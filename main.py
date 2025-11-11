@@ -18,7 +18,7 @@ from run_ai_thread import RunAIThread
 from run_image_thread import RunImageThread
 from enumerations import EngineType
 from pathlib import Path
-from gpiozero import Button, OutputDevice
+from gpiozero import Button, OutputDevice, PWMLED
 from settings import SettingsDialog
 from navicatEncrypt import NavicatCrypto
 from tasks import OCRTask
@@ -38,6 +38,10 @@ PULSE_TIME = 0.5  # seconds
 BASE = Path(__file__).parent.resolve()
 IMG_DIR = BASE / "Captures"
 IMG_DIR.mkdir(parents=True, exist_ok=True)
+
+LED0_GPIO_PIN = 18
+LED1_GPIO_PIN = 19
+PWM_FREQ_HZ = 1000
 
 
 # ----- Main class -----
@@ -80,6 +84,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._password = self._navicat_crypto.DecryptString(settings.value("password", "", type=str))
         self._audio = settings.value("audio", True, type=bool)
         self._fullscreen = settings.value("fullscreen", True, type=bool)
+        self._lights = [settings.value(f"lights/{i}", 0) for i in (0, 1)]
 
         self._timer = QtCore.QTimer(self)
         self._timer.timeout.connect(self.handle_gpiotrigger)
@@ -115,6 +120,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.gpiooutput = OutputDevice(OUTPUT_PIN)
         self.gpiooutput.on()
         self.gpiotrigger.when_pressed = self.handle_gpiotrigger
+
+        # leds
+        self.leds = {}
+        self.leds[0] = PWMLED(LED0_GPIO_PIN, frequency=PWM_FREQ_HZ, active_high=True, initial_value=0.0)
+        self.leds[1] = PWMLED(LED1_GPIO_PIN, frequency=PWM_FREQ_HZ, active_high=True, initial_value=0.0)
 
         if self._fullscreen:
             self.setWindowFlags(Qt.FramelessWindowHint)
@@ -179,6 +189,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.LoadCamRoi()
         self.setup_ocr_parallel()
+        self.ApplyLights()
         self._logger.stop_timer("load_cameras", message="Cameras loaded")
 
 
@@ -502,6 +513,25 @@ class MainWindow(QtWidgets.QMainWindow):
             self.ui.bStopMachine.setIcon(QIcon(":/main/dialog-cancel.png"))
 
 
+    def ApplyLights(self):
+        for idx in (0, 1):
+            dial = getattr(self.ui, f"Cam{idx}LightsDial")
+            dial.setValue(int(self._lights[idx]))
+            self.apply_duty(idx, int(self._lights[idx]))
+
+
+    def LightsDialHandler(self, value):
+        cam_idx = int(self.sender().objectName()[3])
+        self._lights[cam_idx] = value
+        self.apply_duty(cam_idx, value)
+
+
+    def apply_duty(self, cam_idx, val_0_99: int):
+        # Map 0?0.0 and 99?1.0
+        duty = 0.0 if val_0_99 <= 0 else (val_0_99 / 99.0)
+        self.leds[cam_idx].value = duty  # gpiozero expects 0.0..1.0
+
+
     def UpdateMetrics(self):
         self.ui.lcdSpeed.display(self._speed)
         self.ui.lcdMatch.display(self._matchcount)
@@ -532,6 +562,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.SaveSettings()
             self.gpiooutput.off()
             self.gpiotrigger.close()
+            self.leds[0].off()
+            self.leds[1].off()
+            self.leds[0].close()
+            self.leds[1].close()
             subprocess.run(["sudo", "shutdown", "-h", "now"])
 
 
@@ -573,6 +607,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 settings.setValue(f"lensposition/{idx}", 0.0)
             roi = getattr(self.ui, f"Cam{idx}Source").GetRoi()
             settings.setValue(f"roi/{idx}", roi)
+            settings.setValue(f"lights/{idx}", self._lights[idx])
 
         settings.setValue("errorcounttotal", self._errorcountTotal)
         settings.setValue("matchcounttotal", self._matchcountTotal)
